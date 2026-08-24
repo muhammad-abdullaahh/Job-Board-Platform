@@ -1,76 +1,120 @@
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth_schema import LoginRequest, UserRegisterRequest, AdminRegisterRequest, Token
-from app.core.security import verify_password, create_access_token
-
+from app.core.security import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    create_password_reset_token,
+    verify_password_reset_token,
+)
+from app.schemas.auth_schema import Token
 
 class AuthService:
     def __init__(self, db: Session):
         self.user_repo = UserRepository(db)
 
-    def register_user(self, user_in: UserRegisterRequest) -> Token:
-        existing = self.user_repo.get_user_by_email(user_in.email)
-        if existing:
+    def register_user(self, user_in) -> Token:
+        existing_user = self.user_repo.get_user_by_email(user_in.email)
+        if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with this email already exists"
+                detail=f"Email '{user_in.email}' is already registered."
             )
-        user = self.user_repo.create_user(user_in)
-        token = create_access_token(data={"sub": user.user_id, "role": "user"})
-        return Token(
-            access_token=token,
-            role="user",
-            user_id=user.user_id,
-            name=user.name,
-            email=user.email
-        )
 
-    def register_admin(self, admin_in: AdminRegisterRequest) -> Token:
-        existing = self.user_repo.get_admin_by_email(admin_in.email)
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Admin with this email already exists"
+        if getattr(user_in, 'is_admin', False):
+            admin = self.user_repo.create_admin(user_in)
+            role = "admin"
+            token_str = create_access_token(
+                data={"sub": str(admin.admin_id), "role": role, "email": admin.email}
             )
-        admin = self.user_repo.create_admin(admin_in)
-        token = create_access_token(data={"sub": admin.admin_id, "role": "admin"})
-        return Token(
-            access_token=token,
-            role="admin",
-            user_id=admin.admin_id,
-            name=admin.name,
-            email=admin.email
-        )
-
-    def login(self, login_in: LoginRequest) -> Token:
-        if login_in.is_admin:
-            admin = self.user_repo.get_admin_by_email(login_in.email)
-            if not admin or not verify_password(login_in.password, admin.password):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid admin credentials"
-                )
-            token = create_access_token(data={"sub": admin.admin_id, "role": "admin"})
             return Token(
-                access_token=token,
-                role="admin",
+                access_token=token_str,
+                token_type="bearer",
+                role=role,
                 user_id=admin.admin_id,
                 name=admin.name,
-                email=admin.email
+                email=admin.email,
             )
-        else:
-            user = self.user_repo.get_user_by_email(login_in.email)
-            if not user or not verify_password(login_in.password, user.password):
+
+        user = self.user_repo.create_user(user_in)
+        role = "user"
+        token_str = create_access_token(
+            data={"sub": str(user.user_id), "role": role, "email": user.email}
+        )
+        return Token(
+            access_token=token_str,
+            token_type="bearer",
+            role=role,
+            user_id=user.user_id,
+            name=user.name,
+            email=user.email,
+        )
+
+    def login(self, login_in) -> Token:
+        user = self.user_repo.get_user_by_email(login_in.email)
+        if user:
+            if not verify_password(login_in.password, user.password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid user credentials"
+                    detail="Invalid email or password."
                 )
-            token = create_access_token(data={"sub": user.user_id, "role": "user"})
+            role = "user"
+            token_str = create_access_token(
+                data={"sub": str(user.user_id), "role": role, "email": user.email}
+            )
             return Token(
-                access_token=token,
-                role="user",
+                access_token=token_str,
+                token_type="bearer",
+                role=role,
                 user_id=user.user_id,
                 name=user.name,
-                email=user.email
+                email=user.email,
             )
+
+        admin = self.user_repo.get_admin_by_email(login_in.email)
+        if admin:
+            if not verify_password(login_in.password, admin.password):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password."
+                )
+            role = "admin"
+            token_str = create_access_token(
+                data={"sub": str(admin.admin_id), "role": role, "email": admin.email}
+            )
+            return Token(
+                access_token=token_str,
+                token_type="bearer",
+                role=role,
+                user_id=admin.admin_id,
+                name=admin.name,
+                email=admin.email,
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password."
+        )
+
+    def request_password_reset(self, email: str) -> str:
+        user = self.user_repo.get_user_by_email(email)
+        if user:
+            return create_password_reset_token(email)
+        return ""
+
+    def reset_password(self, token: str, new_password: str):
+        email = verify_password_reset_token(token)
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired password reset token."
+            )
+        user = self.user_repo.get_user_by_email(email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User account not found."
+            )
+        hashed_pw = get_password_hash(new_password)
+        self.user_repo.update_user_password(user, hashed_pw)

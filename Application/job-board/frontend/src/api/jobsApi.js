@@ -1,27 +1,28 @@
-import axios from 'axios';
-
-const API_BASE = '/api/v1/jobs';
+import axiosClient from './axiosClient';
 
 export const fetchJobsApi = async (params = {}) => {
-  const response = await axios.get(API_BASE, { params });
+  const response = await axiosClient.get('/jobs', { params });
   return response.data;
 };
 
 export const fetchJobDetailApi = async (jobId) => {
-  const response = await axios.get(`${API_BASE}/${jobId}`);
+  const response = await axiosClient.get(`/jobs/${jobId}`);
   return response.data;
 };
 
-export const createJobApi = async (jobData, token) => {
-  const response = await axios.post(API_BASE, jobData, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+export const createJobApi = async (jobData) => {
+  const response = await axiosClient.post('/jobs', jobData);
   return response.data;
 };
 
-export const updateJobApi = async (jobId, jobData, token) => {
-  const response = await axios.put(`${API_BASE}/${jobId}`, jobData, {
-    headers: { Authorization: `Bearer ${token}` }
+export const updateJobApi = async (jobId, jobData) => {
+  const response = await axiosClient.put(`/jobs/${jobId}`, jobData);
+  return response.data;
+};
+
+export const deleteJobApi = async (jobId, companyId) => {
+  const response = await axiosClient.delete(`/jobs/${jobId}`, {
+    params: { company_id: companyId },
   });
   return response.data;
 };

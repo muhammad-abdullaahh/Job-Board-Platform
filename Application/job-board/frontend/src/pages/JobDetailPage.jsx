@@ -1,122 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Building, MapPin, DollarSign, Calendar, ArrowLeft, Send } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Building, MapPin, DollarSign, Briefcase, Calendar, ArrowLeft, Send } from 'lucide-react';
 import { fetchJobDetailApi } from '../api/jobsApi';
-import { applyToJobApi } from '../api/applicationsApi';
+import { StatusBadge } from '../components/StatusBadge';
 import { ApplicationModal } from '../components/ApplicationModal';
 import { useAuth } from '../auth/useAuth';
 
 export const JobDetailPage = () => {
   const { jobId } = useParams();
-  const navigate = useNavigate();
-  const { token, isAuthenticated } = useAuth();
-
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [applyError, setApplyError] = useState('');
+
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchJobDetailApi(jobId)
-      .then((data) => setJob(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setJob(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [jobId]);
 
-  const handleApplySubmit = async (jId, coverLetter) => {
-    setApplying(true);
-    setApplyError('');
-    try {
-      await applyToJobApi(jId, coverLetter, token);
-      setShowModal(false);
-      alert('Application submitted successfully!');
-    } catch (err) {
-      setApplyError(err.response?.data?.detail || 'Failed to submit application.');
-    } finally {
-      setApplying(false);
+  if (loading) return <div className="container section-padding loading-spinner">Loading job details...</div>;
+  if (!job) return <div className="container section-padding">Job posting not found.</div>;
+
+  const handleApply = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    } else {
+      setShowModal(true);
     }
   };
 
-  if (loading) {
-    return <div className="container page-wrapper" style={{ textAlign: 'center', padding: '5rem 0' }}>Loading job details...</div>;
-  }
-
-  if (!job) {
-    return <div className="container page-wrapper" style={{ textAlign: 'center', padding: '5rem 0' }}>Job position not found.</div>;
-  }
-
   return (
-    <div className="container page-wrapper" style={{ maxWidth: '850px' }}>
-      <button onClick={() => navigate(-1)} className="btn btn-secondary" style={{ marginBottom: '1.5rem', padding: '0.4rem 0.85rem' }}>
-        <ArrowLeft size={16} /> Back
+    <div className="container section-padding">
+      <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm" style={{ marginBottom: '24px' }}>
+        <ArrowLeft size={16} /> Back to jobs
       </button>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div className="job-detail-card card">
+        <div className="job-detail-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <span className="company-badge" style={{ marginBottom: '0.75rem' }}>
-              <Building size={14} /> {job.company?.name}
-            </span>
-            <h1 style={{ fontSize: '2rem', fontWeight: '800', marginTop: '0.5rem' }}>{job.title}</h1>
+            <div className="company-tag">
+              <Building size={16} />
+              {job.company?.company_id ? (
+                <Link to={`/companies/${job.company.company_id}`} className="btn-link" style={{ fontSize: '15px' }}>
+                  {job.company.name}
+                </Link>
+              ) : (
+                <span>{job.company?.name || 'Company Profile'}</span>
+              )}
+              {job.company?.is_verified && <span className="verified-dot">✓ Verified Employer</span>}
+            </div>
+            <h1 style={{ margin: '8px 0' }}>{job.title}</h1>
+            <div className="job-meta" style={{ gap: '20px', margin: '12px 0' }}>
+              <span>
+                <MapPin size={16} /> {job.location || 'Remote'}
+              </span>
+              <span>
+                <Briefcase size={16} /> {job.employment_type?.replace('_', ' ')}
+              </span>
+              <span>
+                <DollarSign size={16} /> ${job.salary_min?.toLocaleString()} - ${job.salary_max?.toLocaleString()}
+              </span>
+              <span>
+                <Calendar size={16} /> Posted {new Date(job.created_at).toLocaleDateString()}
+              </span>
+            </div>
           </div>
 
-          <button
-            onClick={() => {
-              if (!isAuthenticated) navigate('/login');
-              else setShowModal(true);
-            }}
-            className="btn btn-primary"
-            style={{ padding: '0.75rem 1.75rem' }}
-          >
-            <Send size={18} /> Apply For This Role
-          </button>
+          <div style={{ textAlign: 'right' }}>
+            <StatusBadge status={job.status} />
+            {job.status === 'open' && (
+              <div style={{ marginTop: '16px' }}>
+                <button onClick={handleApply} className="btn btn-primary btn-lg">
+                  Apply Now <Send size={18} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '1rem 0', borderTop: '1px solid var(--border-light)', borderBottom: '1px solid var(--border-light)', margin: '1.5rem 0', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          {job.location && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <MapPin size={16} color="var(--primary)" /> <span>{job.location}</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <DollarSign size={16} color="var(--success)" /> 
-            <span>${(job.salary_min / 1000).toFixed(0)}k - ${(job.salary_max / 1000).toFixed(0)}k / yr</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Calendar size={16} color="var(--secondary)" /> 
-            <span style={{ textTransform: 'capitalize' }}>{job.employment_type?.replace('_', ' ')}</span>
-          </div>
+        <hr style={{ margin: '24px 0', borderColor: 'var(--color-border)' }} />
+
+        <div className="job-detail-section">
+          <h2>Job Description</h2>
+          <p style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: 'var(--color-text-muted)', marginTop: '8px' }}>
+            {job.description}
+          </p>
         </div>
 
         {job.skills && job.skills.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--text-muted)' }}>REQUIRED SKILLS</h3>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {job.skills.map((s) => (
-                <span key={s.skill_id} className="skill-tag" style={{ fontSize: '0.85rem', padding: '0.3rem 0.75rem' }}>
-                  {s.name}
+          <div className="job-detail-section" style={{ marginTop: '24px' }}>
+            <h2>Required Skills</h2>
+            <div className="skills-container" style={{ marginTop: '12px' }}>
+              {job.skills.map((skill) => (
+                <span key={skill.skill_id} className="skill-pill">
+                  {skill.name}
                 </span>
               ))}
             </div>
           </div>
         )}
-
-        <div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '1rem' }}>Job Description</h3>
-          <p style={{ whiteSpace: 'pre-line', color: 'var(--text-muted)', lineHeight: '1.8' }}>
-            {job.description || 'No detailed description provided.'}
-          </p>
-        </div>
       </div>
 
       {showModal && (
         <ApplicationModal
           job={job}
           onClose={() => setShowModal(false)}
-          onSubmit={handleApplySubmit}
-          loading={applying}
-          error={applyError}
+          onSuccess={() => alert('Application submitted successfully!')}
         />
       )}
     </div>

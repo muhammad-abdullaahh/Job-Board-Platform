@@ -2,20 +2,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
-    echo=False
-)
+# TODO: Create engine
+engine = None
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# TODO: Create SessionLocal
+SessionLocal = None
 
+# TODO: Create Base
 Base = declarative_base()
 
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    # TODO: Yield a database session and close it in the finally block
+    pass

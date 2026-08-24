@@ -1,49 +1,76 @@
 import React, { useState } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, AlertCircle } from 'lucide-react';
+import { applyToJobApi } from '../api/applicationsApi';
 
-export const ApplicationModal = ({ job, onClose, onSubmit, loading, error }) => {
+export const ApplicationModal = ({ job, onClose, onSuccess }) => {
   const [coverLetter, setCoverLetter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  if (!job) return null;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!coverLetter.trim()) return;
-    onSubmit(job.job_id, coverLetter);
+    if (!coverLetter.trim()) {
+      setError('Please provide a cover letter explaining why you are a good fit.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await applyToJobApi(job.job_id, coverLetter);
+      setLoading(false);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setLoading(false);
+      setError(err.response?.data?.detail || 'Failed to submit application. Please try again.');
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div className="modal-header">
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: '700' }}>Apply for {job.title}</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{job.company?.name}</p>
+            <h2>Apply for {job.title}</h2>
+            <p className="subtitle">{job.company?.name || 'Company'}</p>
           </div>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', border: 'none' }}>
-            <X size={24} />
+          <button className="icon-button" onClick={onClose}>
+            <X size={20} />
           </button>
         </div>
 
-        {error && <div className="alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Cover Letter / Pitch</label>
+            <label htmlFor="coverLetter">Cover Letter / Pitch</label>
             <textarea
-              className="form-control"
+              id="coverLetter"
               rows={6}
-              placeholder="Introduce yourself and explain why you're a great fit for this position..."
+              className="form-control"
+              placeholder="Introduce yourself, highlight your skills, and explain why you're excited about this role..."
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               required
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-            <button type="button" onClick={onClose} className="btn btn-secondary">
+          <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn btn-primary">
-              <Send size={16} /> {loading ? 'Submitting...' : 'Submit Application'}
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Submitting...' : 'Submit Application'}
+              <Send size={16} style={{ marginLeft: '0.5rem' }} />
             </button>
           </div>
         </form>

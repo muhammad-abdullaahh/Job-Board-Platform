@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, User, Mail, Lock, Award } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPlus, User, Mail, Lock, Briefcase, AlertCircle } from 'lucide-react';
 import { registerUserApi } from '../api/authApi';
 import { useAuth } from '../auth/useAuth';
 
@@ -9,13 +9,13 @@ export const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [bio, setBio] = useState('');
-  const [yearsOfExperience, setYearsOfExperience] = useState(0);
-
+  const [yearsExperience, setYearsExperience] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const navigate = useNavigate();
   const { loginUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,38 +28,62 @@ export const RegisterPage = () => {
         email,
         password,
         bio,
-        years_of_experience: parseInt(yearsOfExperience) || 0,
+        years_experience: Number(yearsExperience),
+        is_admin: isAdmin,
       });
       loginUser(data);
+      setLoading(false);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
-    } finally {
       setLoading(false);
+      setError(err.response?.data?.detail || 'Registration failed. Please check inputs.');
     }
   };
 
   return (
-    <div className="container page-wrapper">
-      <div className="auth-container" style={{ maxWidth: '520px' }}>
-        <div className="auth-header">
-          <div style={{ display: 'inline-flex', padding: '0.75rem', borderRadius: '50%', background: 'var(--primary-light)', marginBottom: '0.75rem' }}>
-            <UserPlus size={28} color="var(--primary)" />
+    <div className="auth-page-container container section-padding">
+      <div className="auth-card card">
+        <div className="auth-header text-center">
+          <div className="icon-wrapper">
+            <UserPlus size={28} />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '800' }}>Create Your Account</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Join the job board platform as a job seeker</p>
+          <h2>Create Account</h2>
+          <p className="subtitle">Join JobPulse as a Candidate or Employer</p>
         </div>
 
-        {error && <div className="alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
+          {/* Account Role Selector */}
+          <div className="role-selector-group" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
+            <button
+              type="button"
+              className={`btn btn-block ${!isAdmin ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setIsAdmin(false)}
+            >
+              Candidate / Job Seeker
+            </button>
+            <button
+              type="button"
+              className={`btn btn-block ${isAdmin ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setIsAdmin(true)}
+            >
+              Employer / Admin
+            </button>
+          </div>
+
           <div className="form-group">
             <label>Full Name</label>
-            <div className="search-input-group">
-              <User size={16} color="var(--text-muted)" />
+            <div className="input-with-icon">
+              <User size={18} />
               <input
                 type="text"
-                placeholder="John Doe"
+                placeholder="Jane Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -69,11 +93,11 @@ export const RegisterPage = () => {
 
           <div className="form-group">
             <label>Email Address</label>
-            <div className="search-input-group">
-              <Mail size={16} color="var(--text-muted)" />
+            <div className="input-with-icon">
+              <Mail size={18} />
               <input
                 type="email"
-                placeholder="john@example.com"
+                placeholder="jane@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -83,11 +107,11 @@ export const RegisterPage = () => {
 
           <div className="form-group">
             <label>Password</label>
-            <div className="search-input-group">
-              <Lock size={16} color="var(--text-muted)" />
+            <div className="input-with-icon">
+              <Lock size={18} />
               <input
                 type="password"
-                placeholder="Minimum 6 characters"
+                placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -95,40 +119,47 @@ export const RegisterPage = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Years of Experience</label>
-            <div className="search-input-group">
-              <Award size={16} color="var(--text-muted)" />
-              <input
-                type="number"
-                min="0"
-                value={yearsOfExperience}
-                onChange={(e) => setYearsOfExperience(e.target.value)}
-              />
-            </div>
-          </div>
+          {!isAdmin && (
+            <>
+              <div className="form-group">
+                <label>Years of Experience</label>
+                <div className="input-with-icon">
+                  <Briefcase size={18} />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 4"
+                    value={yearsExperience}
+                    onChange={(e) => setYearsExperience(e.target.value)}
+                  />
+                </div>
+              </div>
 
-          <div className="form-group">
-            <label>Bio / Headline (Optional)</label>
-            <textarea
-              className="form-control"
-              rows={3}
-              placeholder="e.g. Senior Full-Stack Engineer passionate about React, FastAPI & Cloud."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-            />
-          </div>
+              <div className="form-group">
+                <label>Short Bio</label>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="Full-stack engineer passionate about React, FastAPI, and UI architecture..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', marginTop: '1.25rem' }}>
+          <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
             {loading ? 'Creating Account...' : 'Register Account'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>
-            Sign In
-          </Link>
+        <div className="auth-footer text-center" style={{ marginTop: '1.5rem' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+            Already registered?{' '}
+            <Link to="/login" className="btn-link">
+              Sign In
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -1,22 +1,37 @@
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
 from app.models.user import User
 from app.models.skill import Skill
-from app.schemas.user_schema import UserUpdate
-
 
 class UserService:
     def __init__(self, db: Session):
         self.user_repo = UserRepository(db)
         self.db = db
 
-    def get_user_profile(self, user_id: int) -> Optional[User]:
-        return self.user_repo.get_user_by_id(user_id)
+    def get_user_profile(self, user_id: int) -> User:
+        user = self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User #{user_id} not found."
+            )
+        return user
 
-    def update_user_profile(self, user: User, user_in: UserUpdate) -> User:
-        if user_in.skill_ids is not None:
-            skills = self.db.query(Skill).filter(Skill.skill_id.in_(user_in.skill_ids)).all()
+    def get_all_users(self) -> List[User]:
+        return self.user_repo.get_all_users()
+
+    def update_user_profile(self, user: User, user_in) -> User:
+        update_data = user_in.dict(exclude_unset=True)
+        skill_ids = update_data.pop('skill_ids', None)
+
+        if skill_ids is not None:
+            skills = self.db.query(Skill).filter(Skill.skill_id.in_(skill_ids)).all()
             user.skills = skills
 
         return self.user_repo.update_user(user, user_in)
+
+    def delete_user(self, user_id: int) -> User:
+        user = self.get_user_profile(user_id)
+        return self.user_repo.soft_delete_user(user)

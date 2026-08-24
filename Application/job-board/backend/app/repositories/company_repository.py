@@ -1,7 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.company import Company
-from app.schemas.company_schema import CompanyCreate, CompanyUpdate
 
 
 class CompanyRepository:
@@ -9,40 +8,30 @@ class CompanyRepository:
         self.db = db
 
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Company]:
-        return self.db.query(Company).filter(Company.deleted_at.is_(None)).offset(skip).limit(limit).all()
+        # TODO: Query all active companies (deleted_at is None), apply skip/limit
+        pass
 
     def get_by_id(self, company_id: int) -> Optional[Company]:
-        return self.db.query(Company).filter(Company.company_id == company_id, Company.deleted_at.is_(None)).first()
+        # TODO: Query Company by company_id, filter deleted_at is None
+        pass
 
-    def create(self, company_in: CompanyCreate) -> Company:
-        company = Company(
-            name=company_in.name,
-            description=company_in.description,
-            website=company_in.website,
-            location=company_in.location
-        )
-        self.db.add(company)
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+    def create(self, company_in) -> Company:
+        # TODO: Build Company from company_in, add to DB, commit, refresh, return
+        pass
 
-    def update(self, company: Company, company_in: CompanyUpdate, admin_id: Optional[int] = None) -> Company:
-        if company_in.name is not None:
-            company.name = company_in.name
-        if company_in.description is not None:
-            company.description = company_in.description
-        if company_in.website is not None:
-            company.website = company_in.website
-        if company_in.location is not None:
-            company.location = company_in.location
-        if company_in.is_verified is not None:
-            company.is_verified = company_in.is_verified
-            if admin_id and company_in.is_verified:
-                company.verified_by = admin_id
-        
-        if admin_id:
-            company.updated_by = admin_id
+    def update(self, company: Company, company_in, admin_id: Optional[int] = None) -> Company:
+        # TODO: Apply field updates, handle is_verified + verified_by, updated_by, commit, refresh, return
+        pass
 
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+    def rename(self, company: Company, new_name: str, updated_by_user_id: int) -> Company:
+        # TODO: Set company.name = new_name
+        # TODO: Set company.updated_by = updated_by_user_id
+        # TODO: Set company.updated_at = datetime.now(UTC)
+        # TODO: Commit, refresh, return
+        pass
+
+    def soft_delete(self, company: Company, deleted_by_user_id: int) -> Company:
+        # TODO: Set company.deleted_at = datetime.now(UTC)
+        # TODO: Set company.deleted_by = deleted_by_user_id
+        # TODO: Commit, refresh, return
+        pass

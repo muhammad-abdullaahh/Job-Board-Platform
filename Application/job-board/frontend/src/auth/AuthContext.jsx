@@ -3,26 +3,24 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(() => localStorage.getItem('job_board_token') || null);
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('job_board_user');
-    return saved ? JSON.parse(saved) : null;
+    const savedUser = localStorage.getItem('job_board_user');
+    return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('job_board_token') || null;
-  });
-
-  const loginUser = (tokenData) => {
-    setToken(tokenData.access_token);
-    const userInfo = {
-      user_id: tokenData.user_id,
-      name: tokenData.name,
-      email: tokenData.email,
-      role: tokenData.role,
+  const loginUser = (authData) => {
+    // authData: { access_token, role, user_id, name, email }
+    const userObj = {
+      user_id: authData.user_id,
+      name: authData.name,
+      email: authData.email,
+      role: authData.role,
     };
-    setUser(userInfo);
-    localStorage.setItem('job_board_token', tokenData.access_token);
-    localStorage.setItem('job_board_user', JSON.stringify(userInfo));
+    setToken(authData.access_token);
+    setUser(userObj);
+    localStorage.setItem('job_board_token', authData.access_token);
+    localStorage.setItem('job_board_user', JSON.stringify(userObj));
   };
 
   const logoutUser = () => {
@@ -33,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loginUser, logoutUser, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ token, user, loginUser, logoutUser, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

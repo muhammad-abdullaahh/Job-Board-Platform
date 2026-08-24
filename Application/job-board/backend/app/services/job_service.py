@@ -1,11 +1,9 @@
 from typing import Optional, List
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 from app.repositories.job_repository import JobRepository
 from app.repositories.company_repository import CompanyRepository
 from app.models.job import Job, JobStatus, EmploymentType
-from app.schemas.job_schema import JobCreate, JobUpdate
-
 
 class JobService:
     def __init__(self, db: Session):
@@ -17,7 +15,7 @@ class JobService:
         if not job:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Job posting not found"
+                detail=f"Job #{job_id} not found."
             )
         return job
 
@@ -40,18 +38,27 @@ class JobService:
             min_salary=min_salary,
             company_id=company_id,
             skip=skip,
-            limit=limit
+            limit=limit,
         )
 
-    def create_job(self, job_in: JobCreate, user_id: Optional[int] = None) -> Job:
+    def create_job(self, job_in, user_id: Optional[int] = None) -> Job:
         company = self.company_repo.get_by_id(job_in.company_id)
         if not company:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Company with ID {job_in.company_id} does not exist"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Company #{job_in.company_id} not found."
             )
-        return self.job_repo.create(job_in, user_id=user_id)
+        return self.job_repo.create(job_in, user_id)
 
-    def update_job(self, job_id: int, job_in: JobUpdate, user_id: Optional[int] = None) -> Job:
+    def update_job(self, job_id: int, job_in, user_id: Optional[int] = None) -> Job:
         job = self.get_job(job_id)
-        return self.job_repo.update(job, job_in, user_id=user_id)
+        return self.job_repo.update(job, job_in, user_id)
+
+    def delete_job(self, job_id: int, company_id: int, deleted_by_user_id: int) -> Job:
+        job = self.job_repo.get_by_id_and_company(job_id, company_id)
+        if not job:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job #{job_id} belonging to company #{company_id} not found."
+            )
+        return self.job_repo.soft_delete(job, deleted_by_user_id)

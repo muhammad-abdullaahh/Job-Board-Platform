@@ -3,13 +3,18 @@ import { Briefcase } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer style={{ borderTop: '1px solid var(--border-color)', padding: '2.5rem 0', background: 'var(--bg-dark)', marginTop: '4rem', color: 'var(--text-subtle)', textAlign: 'center', fontSize: '0.9rem' }}>
-      <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700', color: '#fff' }}>
-          <Briefcase size={20} color="#6366f1" />
-          <span>CareerHub Platform</span>
+    <footer className="footer">
+      <div className="container footer-content">
+        <div className="footer-brand">
+          <Briefcase size={20} className="logo-icon" />
+          <span>JobPulse</span>
+          <p>© 2026 JobPulse Platform. Empowering careers & hiring globally.</p>
         </div>
-        <p>© 2026 Job Board Platform. All rights reserved.</p>
+        <div className="footer-links">
+          <a href="/jobs">Browse Jobs</a>
+          <a href="/login">Employer Portal</a>
+          <a href="/privacy">Privacy Policy</a>
+        </div>
       </div>
     </footer>
   );

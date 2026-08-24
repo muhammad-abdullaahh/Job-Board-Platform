@@ -1,6 +1,6 @@
-from datetime import datetime
-from typing import Optional
 from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
 
 
 class CompanyCreate(BaseModel):
@@ -16,6 +16,10 @@ class CompanyUpdate(BaseModel):
     website: Optional[str] = None
     location: Optional[str] = None
     is_verified: Optional[bool] = None
+
+
+class CompanyRenameRequest(BaseModel):
+    name: str
 
 
 class CompanyResponse(BaseModel):

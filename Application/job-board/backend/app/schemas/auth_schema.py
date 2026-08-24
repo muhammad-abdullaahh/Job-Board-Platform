@@ -5,21 +5,15 @@ from typing import Optional
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    role: str
+    role: str        # "admin" or "user" — derived from is_admin field
     user_id: int
     name: str
     email: str
 
 
-class TokenData(BaseModel):
-    sub: Optional[int] = None
-    role: Optional[str] = None
-
-
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-    is_admin: bool = False
 
 
 class UserRegisterRequest(BaseModel):
@@ -28,9 +22,13 @@ class UserRegisterRequest(BaseModel):
     password: str
     bio: Optional[str] = None
     years_of_experience: int = 0
+    is_admin: bool = False   # True only for admin registration
 
 
-class AdminRegisterRequest(BaseModel):
-    name: str
+class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-    password: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str

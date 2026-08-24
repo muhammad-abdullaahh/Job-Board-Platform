@@ -5,12 +5,9 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user, get_current_user_or_admin
 from app.models.user import User
 from app.services.application_service import ApplicationService
-from app.schemas.application_schema import (
-    ApplicationCreate, ApplicationStatusUpdate, ApplicationResponse
-)
+from app.schemas.application_schema import ApplicationCreate, ApplicationStatusUpdate, ApplicationResponse
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
-
 
 @router.post("", response_model=ApplicationResponse, status_code=status.HTTP_201_CREATED)
 def apply_to_job(
@@ -19,8 +16,7 @@ def apply_to_job(
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.apply_to_job(current_user.user_id, app_in)
-
+    return service.apply_to_job(user_id=current_user.user_id, app_in=app_in)
 
 @router.get("/me", response_model=List[ApplicationResponse])
 def get_my_applications(
@@ -28,8 +24,7 @@ def get_my_applications(
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.get_my_applications(current_user.user_id)
-
+    return service.get_my_applications(user_id=current_user.user_id)
 
 @router.get("/job/{job_id}", response_model=List[ApplicationResponse])
 def get_job_applications(
@@ -38,8 +33,7 @@ def get_job_applications(
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.get_job_applications(job_id)
-
+    return service.get_job_applications(job_id=job_id)
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
 def update_application_status(
@@ -48,6 +42,10 @@ def update_application_status(
     current_auth: dict = Depends(get_current_user_or_admin),
     db: Session = Depends(get_db)
 ):
+    updater_id = current_auth.get("user_id") or current_auth.get("admin_id")
     service = ApplicationService(db)
-    updater_id = current_auth["id"] if current_auth["type"] == "user" else None
-    return service.update_application_status(application_id, status_in.status, updater_id)
+    return service.update_application_status(
+        application_id=application_id,
+        new_status=status_in.status,
+        updater_user_id=updater_id
+    )

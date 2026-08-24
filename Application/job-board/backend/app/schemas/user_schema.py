@@ -1,6 +1,6 @@
-from datetime import datetime
-from typing import Optional, List
 from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
 
 class SkillResponse(BaseModel):

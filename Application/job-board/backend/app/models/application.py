@@ -1,40 +1,48 @@
 import enum
-from datetime import datetime, timezone
+from app.database import Base
 from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, UniqueConstraint, Enum as SQLEnum
 from sqlalchemy.orm import relationship
-from app.database import Base
 
 
 class ApplicationStatus(str, enum.Enum):
-    pending = "pending"
-    reviewed = "reviewed"
-    shortlisted = "shortlisted"
-    accepted = "accepted"
-    rejected = "rejected"
+    pending         = "pending"
+    reviewed        = "reviewed"
+    shortlisted     = "shortlisted"
+    offer_issued    = "offer_issued"    # Company sent the offer letter
+    offer_accepted  = "offer_accepted"  # Candidate accepted the offer
+    offer_declined  = "offer_declined"  # Candidate declined the offer
+    hired           = "hired"           # Finalized — candidate onboarded
+    rejected        = "rejected"
+    expired         = "expired"         # 48h window passed, no response from candidate
 
 
 class Application(Base):
     __tablename__ = "applications"
 
-    application_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
-    job_id = Column(Integer, ForeignKey("jobs.job_id", ondelete="CASCADE"), nullable=False, index=True)
-    cover_letter = Column(Text, nullable=False)
-    status = Column(
-        SQLEnum(ApplicationStatus, name="application_status_enum"),
-        nullable=False,
-        default=ApplicationStatus.pending
-    )
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=True, onupdate=lambda: datetime.now(timezone.utc))
-    updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
-    deleted_at = Column(DateTime, nullable=True)
+    # TODO: Define columns:
+    # application_id  - Integer, primary key
+    # user_id         - Integer, FK -> users.user_id, not null
+    # job_id          - Integer, FK -> jobs.job_id, not null
+    # cover_letter    - Text, not null
+    # status          - ApplicationStatus enum, not null, default "pending"
+    # created_at      - DateTime, not null, default now()
+    # updated_at      - DateTime, nullable
+    # updated_by      - Integer, FK -> users.user_id, nullable
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "job_id", name="uq_user_job"),
-    )
+    # --- Offer letter tracking fields ---
+    # offer_issued_at  - DateTime, nullable
+    #                    Set when status transitions to "offer_issued"
+    # offer_expires_at - DateTime, nullable
+    #                    Set to offer_issued_at + 48 hours
+    #                    APScheduler checks this to auto-set status to "expired"
 
-    # Relationships
-    applicant = relationship("User", foreign_keys=[user_id], back_populates="applications")
-    job = relationship("Job", foreign_keys=[job_id], back_populates="applications")
-    updater_user = relationship("User", foreign_keys=[updated_by])
+    # --- Soft delete ---
+    # deleted_at       - DateTime, nullable
+
+    # TODO: Add UniqueConstraint on (user_id, job_id) -> "uq_user_job"
+    __table_args__ = ()
+
+    # TODO: Define relationships:
+    # - applicant   (User, FK user_id)
+    # - job         (Job,  FK job_id)
+    # - updater_user (User, FK updated_by)

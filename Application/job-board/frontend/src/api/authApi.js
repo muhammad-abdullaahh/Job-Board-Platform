@@ -1,22 +1,24 @@
-import axios from 'axios';
+import axiosClient from './axiosClient';
 
-const API_BASE = '/api/v1/auth';
-
-export const loginApi = async (email, password, isAdmin = false) => {
-  const response = await axios.post(`${API_BASE}/login`, {
-    email,
-    password,
-    is_admin: isAdmin,
-  });
+export const loginApi = async (email, password) => {
+  const response = await axiosClient.post('/auth/login', { email, password });
   return response.data;
 };
 
 export const registerUserApi = async (userData) => {
-  const response = await axios.post(`${API_BASE}/register`, userData);
+  const response = await axiosClient.post('/auth/register', userData);
   return response.data;
 };
 
-export const registerAdminApi = async (adminData) => {
-  const response = await axios.post(`${API_BASE}/register-admin`, adminData);
+export const forgotPasswordApi = async (email) => {
+  const response = await axiosClient.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPasswordApi = async (token, newPassword) => {
+  const response = await axiosClient.post('/auth/reset-password', {
+    token,
+    new_password: newPassword,
+  });
   return response.data;
 };

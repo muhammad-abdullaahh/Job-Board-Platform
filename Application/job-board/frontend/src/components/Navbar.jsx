@@ -1,10 +1,10 @@
 import React from 'react';
-import { Link, useNavigate } from 'react.to-dom' || 'react-router-dom';
-import { Briefcase, User, LogOut, PlusCircle, LayoutDashboard } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Briefcase, User, LogOut, LayoutDashboard, Shield } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 
 export const Navbar = () => {
-  const { user, logoutUser, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logoutUser } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -14,37 +14,39 @@ export const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <div className="container navbar-inner">
-        <Link to="/" className="brand-logo">
-          <Briefcase size={26} color="#6366f1" />
-          <span>CareerHub</span>
+      <div className="container nav-container">
+        <Link to="/" className="nav-logo">
+          <Briefcase className="logo-icon" size={24} />
+          <span>JobPulse</span>
         </Link>
 
         <div className="nav-links">
-          <Link to="/jobs" className="nav-link">Browse Jobs</Link>
-          
+          <Link to="/jobs" className="nav-link">
+            Find Jobs
+          </Link>
+
           {isAuthenticated ? (
-            <>
-              <Link to="/dashboard" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <LayoutDashboard size={16} /> My Dashboard
+            <div className="nav-user-menu">
+              <Link to="/dashboard" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                {user?.role === 'admin' ? <Shield size={16} /> : <LayoutDashboard size={16} />}
+                <span>Dashboard</span>
               </Link>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
-                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  Hello, <strong>{user?.name}</strong>
-                </span>
-                <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}>
-                  <LogOut size={14} /> Logout
-                </button>
-              </div>
-            </>
+              <span className="user-email-tag">
+                {user?.name || user?.email} {user?.role === 'admin' && <span className="admin-chip">Admin</span>}
+              </span>
+              <button onClick={handleLogout} className="btn btn-ghost btn-sm" title="Logout">
+                <LogOut size={18} />
+              </button>
+            </div>
           ) : (
-            <>
-              <Link to="/login" className="nav-link">Sign In</Link>
-              <Link to="/register" className="btn btn-primary">
-                Get Started
+            <div className="nav-auth-buttons">
+              <Link to="/login" className="btn btn-ghost btn-sm">
+                Log In
               </Link>
-            </>
+              <Link to="/register" className="btn btn-primary btn-sm">
+                Sign Up
+              </Link>
+            </div>
           )}
         </div>
       </div>

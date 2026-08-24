@@ -1,6 +1,6 @@
-from datetime import datetime
-from typing import Optional, List
 from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
 from app.models.job import EmploymentType, JobStatus
 from app.schemas.company_schema import CompanyResponse
 from app.schemas.user_schema import SkillResponse

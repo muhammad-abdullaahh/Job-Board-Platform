@@ -1,98 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Filter, MapPin, DollarSign } from 'lucide-react';
+import { Search, Filter, RefreshCw } from 'lucide-react';
 import { fetchJobsApi } from '../api/jobsApi';
 import { JobCard } from '../components/JobCard';
 import { ApplicationModal } from '../components/ApplicationModal';
-import { applyToJobApi } from '../api/applicationsApi';
 import { useAuth } from '../auth/useAuth';
 
 export const JobListingsPage = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { token, isAuthenticated } = useAuth();
-
+  const [searchParams, setSearchParams] = useSearchParams();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [selectedJob, setSelectedJob] = useState(null);
+
+  // Filter States
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [location, setLocation] = useState(searchParams.get('location') || '');
   const [employmentType, setEmploymentType] = useState('');
   const [minSalary, setMinSalary] = useState('');
 
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [applying, setApplying] = useState(false);
-  const [applyError, setApplyError] = useState('');
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const loadJobs = () => {
     setLoading(true);
     const params = {};
-    if (query) params.q = query;
+    if (query) params.title = query;
     if (location) params.location = location;
     if (employmentType) params.employment_type = employmentType;
-    if (minSalary) params.min_salary = minSalary;
+    if (minSalary) params.salary_min = minSalary;
 
     fetchJobsApi(params)
-      .then((data) => setJobs(data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setJobs(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   };
 
   useEffect(() => {
     loadJobs();
-  }, [employmentType]);
+  }, [searchParams]);
 
   const handleFilterSubmit = (e) => {
     e.preventDefault();
+    const newParams = {};
+    if (query) newParams.q = query;
+    if (location) newParams.location = location;
+    setSearchParams(newParams);
     loadJobs();
+  };
+
+  const handleResetFilters = () => {
+    setQuery('');
+    setLocation('');
+    setEmploymentType('');
+    setMinSalary('');
+    setSearchParams({});
   };
 
   const handleApplyClick = (job) => {
     if (!isAuthenticated) {
       navigate('/login');
-      return;
-    }
-    setSelectedJob(job);
-  };
-
-  const handleApplySubmit = async (jobId, coverLetter) => {
-    setApplying(true);
-    setApplyError('');
-    try {
-      await applyToJobApi(jobId, coverLetter, token);
-      setSelectedJob(null);
-      alert('Application submitted successfully!');
-    } catch (err) {
-      setApplyError(err.response?.data?.detail || 'Failed to submit application.');
-    } finally {
-      setApplying(false);
+    } else {
+      setSelectedJob(job);
     }
   };
 
   return (
-    <div className="container page-wrapper">
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: '800' }}>Explore All Jobs</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Browse active technical openings across leading organizations</p>
+    <div className="container section-padding">
+      <div className="page-header" style={{ marginBottom: '2rem' }}>
+        <h1>Explore All Jobs</h1>
+        <p className="subtitle">Filter through active career opportunities</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '2rem' }}>
-        {/* Filters Sidebar */}
-        <aside style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', height: 'fit-content' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
-            <Filter size={18} color="var(--primary)" />
-            <span>Filter Positions</span>
+      <div className="job-listings-layout">
+        {/* Sidebar Filters */}
+        <aside className="filter-sidebar">
+          <div className="filter-header">
+            <h3>
+              <Filter size={18} /> Filters
+            </h3>
+            <button onClick={handleResetFilters} className="btn-link">
+              Reset
+            </button>
           </div>
 
           <form onSubmit={handleFilterSubmit}>
             <div className="form-group">
               <label>Search Keyword</label>
-
-              <div className="search-input-group">
-                <Search size={16} color="var(--text-muted)" />
+              <div className="input-with-icon">
+                <Search size={16} />
                 <input
                   type="text"
-                  placeholder="Title or skill..."
+                  placeholder="e.g. Developer, Designer"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -101,15 +101,13 @@ export const JobListingsPage = () => {
 
             <div className="form-group">
               <label>Location</label>
-              <div className="search-input-group">
-                <MapPin size={16} color="var(--text-muted)" />
-                <input
-                  type="text"
-                  placeholder="City or Remote..."
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="e.g. Remote, San Francisco"
+                className="form-control"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
             </div>
 
             <div className="form-group">
@@ -123,41 +121,43 @@ export const JobListingsPage = () => {
                 <option value="full_time">Full Time</option>
                 <option value="part_time">Part Time</option>
                 <option value="contract">Contract</option>
+                <option value="remote">Remote</option>
+                <option value="internship">Internship</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Min Salary ($/yr)</label>
-              <div className="search-input-group">
-                <DollarSign size={16} color="var(--text-muted)" />
-                <input
-                  type="number"
-                  placeholder="e.g. 80000"
-                  value={minSalary}
-                  onChange={(e) => setMinSalary(e.target.value)}
-                />
-              </div>
+              <label>Minimum Salary ($)</label>
+              <input
+                type="number"
+                placeholder="e.g. 80000"
+                className="form-control"
+                value={minSalary}
+                onChange={(e) => setMinSalary(e.target.value)}
+              />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+            <button type="submit" className="btn btn-primary btn-block">
               Apply Filters
             </button>
           </form>
         </aside>
 
-        {/* Job Listings Grid */}
-        <main>
+        {/* Job Cards Grid */}
+        <main className="job-listings-content">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Loading openings...</div>
+            <div className="loading-spinner">Searching positions...</div>
           ) : jobs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>No Jobs Found</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Try broadening your search keywords or clearing filters.</p>
+            <div className="card text-center" style={{ padding: '3rem' }}>
+              <p>No jobs found matching your filters.</p>
+              <button onClick={handleResetFilters} className="btn btn-secondary btn-sm" style={{ marginTop: '1rem' }}>
+                <RefreshCw size={14} /> Reset Filters
+              </button>
             </div>
           ) : (
-            <div className="job-grid" style={{ marginTop: 0 }}>
+            <div className="jobs-grid">
               {jobs.map((job) => (
-                <JobCard key={job.job_id} job={job} onApplyClick={handleApplyClick} />
+                <JobCard key={job.job_id} job={job} onApply={handleApplyClick} />
               ))}
             </div>
           )}
@@ -168,9 +168,7 @@ export const JobListingsPage = () => {
         <ApplicationModal
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
-          onSubmit={handleApplySubmit}
-          loading={applying}
-          error={applyError}
+          onSuccess={() => alert('Application submitted successfully!')}
         />
       )}
     </div>

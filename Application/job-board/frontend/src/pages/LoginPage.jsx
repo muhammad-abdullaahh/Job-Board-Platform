@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, Lock, Mail } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { LogIn, Lock, Mail, AlertCircle } from 'lucide-react';
 import { loginApi } from '../api/authApi';
 import { useAuth } from '../auth/useAuth';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const navigate = useNavigate();
   const { loginUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,37 +19,42 @@ export const LoginPage = () => {
     setError('');
 
     try {
-      const data = await loginApi(email, password, isAdmin);
+      const data = await loginApi(email, password);
       loginUser(data);
+      setLoading(false);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid email or password credentials.');
-    } finally {
       setLoading(false);
+      setError(err.response?.data?.detail || 'Invalid email or password.');
     }
   };
 
   return (
-    <div className="container page-wrapper">
-      <div className="auth-container">
-        <div className="auth-header">
-          <div style={{ display: 'inline-flex', padding: '0.75rem', borderRadius: '50%', background: 'var(--primary-light)', marginBottom: '0.75rem' }}>
-            <LogIn size={28} color="var(--primary)" />
+    <div className="auth-page-container container section-padding">
+      <div className="auth-card card">
+        <div className="auth-header text-center">
+          <div className="icon-wrapper">
+            <LogIn size={28} />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '800' }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Sign in to manage applications & job postings</p>
+          <h2>Welcome Back</h2>
+          <p className="subtitle">Sign in to manage applications & job postings</p>
         </div>
 
-        {error && <div className="alert-error">{error}</div>}
+        {error && (
+          <div className="alert alert-error">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email Address</label>
-            <div className="search-input-group">
-              <Mail size={16} color="var(--text-muted)" />
+            <div className="input-with-icon">
+              <Mail size={18} />
               <input
                 type="email"
-                placeholder="name@company.com"
+                placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -59,9 +63,14 @@ export const LoginPage = () => {
           </div>
 
           <div className="form-group">
-            <label>Password</label>
-            <div className="search-input-group">
-              <Lock size={16} color="var(--text-muted)" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Password</label>
+              <Link to="/forgot-password" className="btn-link" style={{ fontSize: '0.85rem' }}>
+                Forgot Password?
+              </Link>
+            </div>
+            <div className="input-with-icon">
+              <Lock size={18} />
               <input
                 type="password"
                 placeholder="••••••••"
@@ -72,28 +81,18 @@ export const LoginPage = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-            <input
-              type="checkbox"
-              id="admin-check"
-              checked={isAdmin}
-              onChange={(e) => setIsAdmin(e.target.checked)}
-            />
-            <label htmlFor="admin-check" style={{ margin: 0, cursor: 'pointer', fontSize: '0.85rem' }}>
-              Login as Administrator
-            </label>
-          </div>
-
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', marginTop: '1.25rem' }}>
-            {loading ? 'Authenticating...' : 'Sign In'}
+          <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-          Don't have an account yet?{' '}
-          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '600' }}>
-            Create Account
-          </Link>
+        <div className="auth-footer text-center" style={{ marginTop: '1.5rem' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+            Don't have an account?{' '}
+            <Link to="/register" className="btn-link">
+              Create Account
+            </Link>
+          </p>
         </div>
       </div>
     </div>
