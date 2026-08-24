@@ -98,23 +98,40 @@ class AuthService:
         )
 
     def request_password_reset(self, email: str) -> str:
-        user = self.user_repo.get_user_by_email(email)
-        if user:
-            return create_password_reset_token(email)
-        return ""
+        clean_email = email.strip().lower()
+        user = self.user_repo.get_user_by_email(clean_email)
+        admin = self.user_repo.get_admin_by_email(clean_email)
+        
+        if not user and not admin:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No registered account found with email '{clean_email}'."
+            )
+            
+        return create_password_reset_token(clean_email)
 
     def reset_password(self, token: str, new_password: str):
-        email = verify_password_reset_token(token)
+        clean_token = token.strip().strip('"').strip("'")
+        email = verify_password_reset_token(clean_token)
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid or expired password reset token."
             )
+            
         user = self.user_repo.get_user_by_email(email)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User account not found."
-            )
-        hashed_pw = get_password_hash(new_password)
-        self.user_repo.update_user_password(user, hashed_pw)
+        if user:
+            hashed_pw = get_password_hash(new_password)
+            self.user_repo.update_user_password(user, hashed_pw)
+            return
+
+        admin = self.user_repo.get_admin_by_email(email)
+        if admin:
+            hashed_pw = get_password_hash(new_password)
+            self.user_repo.update_admin_password(admin, hashed_pw)
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account associated with token no longer exists."
+        )

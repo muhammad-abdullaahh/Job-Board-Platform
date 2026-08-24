@@ -1,37 +1,37 @@
+from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
+from app.models.skill import user_skills
 
 class User(Base):
     __tablename__ = "users"
 
-    # --- Shared fields (both Admin and User) ---
-    # TODO: user_id   - Integer, primary key
-    # TODO: name      - String(255), not null
-    # TODO: email     - String(255), unique, not null, indexed
-    # TODO: password  - String(255), not null
-    # TODO: is_admin  - Boolean, not null, default False
-    # TODO: created_at - DateTime, not null, default now()
+    user_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    # --- User-only fields (is_admin=False rows only) ---
-    # NOTE: These columns exist in the table for all rows,
-    #       but the service layer will never populate them for admins.
-    # TODO: bio                 - Text, nullable
-    # TODO: years_of_experience - Integer, not null, default 0, check >= 0
-    # TODO: updated_at          - DateTime, nullable (auto-set on update)
-    # TODO: deleted_at          - DateTime, nullable (soft-delete timestamp)
-    # TODO: deleted_by          - Integer, FK -> users.user_id, nullable
-    #                             (self-referential: which admin deleted this user)
-    pass
+    bio = Column(Text, nullable=True)
+    years_experience = Column(Integer, default=0, nullable=False)
 
-    # TODO: Define relationships:
-    # - skills (many-to-many via user_skills)
-    # - applications (one-to-many)
-    # - updated_jobs (FK jobs.updated_by)
-    # - deleted_jobs (FK jobs.deleted_by)
-    # - verified_companies (FK companies.verified_by)
-    # - updated_companies (FK companies.updated_by)
-    # - deleted_companies (FK companies.deleted_by)
-    # - created_skills (FK skills.created_by)
-    # - deleter (self-ref: the admin who deleted this user, FK deleted_by -> user_id)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    # Relationships
+    skills = relationship("Skill", secondary=user_skills, back_populates="users")
+    applications = relationship("Application", foreign_keys="[Application.user_id]", back_populates="applicant", cascade="all, delete-orphan")
+
+
+class Admin(Base):
+    __tablename__ = "admins"
+
+    admin_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

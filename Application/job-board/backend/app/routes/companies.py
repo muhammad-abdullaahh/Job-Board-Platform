@@ -45,6 +45,16 @@ def update_company(
     service = CompanyService(db)
     return service.update_company(company_id, company_in, admin_id=updater_id)
 
+@router.patch("/{company_id}/verify", response_model=CompanyResponse)
+def verify_company(
+    company_id: int,
+    admin_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    service = CompanyService(db)
+    comp_update = CompanyUpdate(is_verified=True)
+    return service.update_company(company_id, comp_update, admin_id=admin_user.user_id)
+
 @router.patch("/{company_id}/name", response_model=CompanyResponse)
 def rename_company(
     company_id: int,

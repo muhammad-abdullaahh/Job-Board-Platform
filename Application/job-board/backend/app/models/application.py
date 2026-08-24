@@ -2,7 +2,7 @@ import enum
 from app.database import Base
 from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, UniqueConstraint, Enum as SQLEnum
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 
 class ApplicationStatus(str, enum.Enum):
     pending         = "pending"
@@ -15,34 +15,29 @@ class ApplicationStatus(str, enum.Enum):
     rejected        = "rejected"
     expired         = "expired"         # 48h window passed, no response from candidate
 
-
 class Application(Base):
     __tablename__ = "applications"
 
-    # TODO: Define columns:
-    # application_id  - Integer, primary key
-    # user_id         - Integer, FK -> users.user_id, not null
-    # job_id          - Integer, FK -> jobs.job_id, not null
-    # cover_letter    - Text, not null
-    # status          - ApplicationStatus enum, not null, default "pending"
-    # created_at      - DateTime, not null, default now()
-    # updated_at      - DateTime, nullable
-    # updated_by      - Integer, FK -> users.user_id, nullable
+    application_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    job_id = Column(Integer, ForeignKey("jobs.job_id", ondelete="CASCADE"), nullable=False)
+    cover_letter = Column(Text, nullable=False)
+    status = Column(SQLEnum(ApplicationStatus), default=ApplicationStatus.pending, nullable=False)
 
-    # --- Offer letter tracking fields ---
-    # offer_issued_at  - DateTime, nullable
-    #                    Set when status transitions to "offer_issued"
-    # offer_expires_at - DateTime, nullable
-    #                    Set to offer_issued_at + 48 hours
-    #                    APScheduler checks this to auto-set status to "expired"
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    # --- Soft delete ---
-    # deleted_at       - DateTime, nullable
+    offer_issued_at = Column(DateTime(timezone=True), nullable=True)
+    offer_expires_at = Column(DateTime(timezone=True), nullable=True)
 
-    # TODO: Add UniqueConstraint on (user_id, job_id) -> "uq_user_job"
-    __table_args__ = ()
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    # TODO: Define relationships:
-    # - applicant   (User, FK user_id)
-    # - job         (Job,  FK job_id)
-    # - updater_user (User, FK updated_by)
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="uq_user_job"),
+    )
+
+    # Relationships with explicit foreign_keys
+    applicant = relationship("User", foreign_keys=[user_id], back_populates="applications")
+    job = relationship("Job", foreign_keys=[job_id], back_populates="applications")

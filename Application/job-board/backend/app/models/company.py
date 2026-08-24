@@ -1,23 +1,27 @@
+from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 
 class Company(Base):
     __tablename__ = "companies"
 
-    # TODO: Define columns:
-    # company_id, name, description, website, location,
-    # is_verified (Boolean, default False),
-    # verified_by (FK -> users.user_id, nullable),
-    # created_at, updated_at,
-    # updated_by (FK -> users.user_id, nullable),
-    # deleted_at,
-    # deleted_by (FK -> users.user_id, nullable)
-    pass
+    company_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    website = Column(String(255), nullable=True)
+    location = Column(String(255), nullable=True)
 
-    # TODO: Define relationships:
-    # - jobs (one-to-many)
-    # - verifier_user (User, FK verified_by)
-    # - updater_user (User, FK updated_by)
-    # - deleter_user (User, FK deleted_by)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    # Relationships
+    jobs = relationship("Job", back_populates="company", cascade="all, delete-orphan")

@@ -1,28 +1,35 @@
+from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
+# Junction table: user_skills
+user_skills = Table(
+    "user_skills",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True),
+    Column("skill_id", Integer, ForeignKey("skills.skill_id", ondelete="CASCADE"), primary_key=True),
+)
 
-# TODO: Define junction table user_skills
-# Columns: user_id (FK -> users.user_id), skill_id (FK -> skills.skill_id)
-user_skills = None  # Replace with Table(...)
-
-# TODO: Define junction table job_skills
-# Columns: job_id (FK -> jobs.job_id), skill_id (FK -> skills.skill_id)
-job_skills = None  # Replace with Table(...)
-
+# Junction table: job_skills
+job_skills = Table(
+    "job_skills",
+    Base.metadata,
+    Column("job_id", Integer, ForeignKey("jobs.job_id", ondelete="CASCADE"), primary_key=True),
+    Column("skill_id", Integer, ForeignKey("skills.skill_id", ondelete="CASCADE"), primary_key=True),
+)
 
 class Skill(Base):
     __tablename__ = "skills"
 
-    # TODO: Define columns:
-    # skill_id, name (unique),
-    # created_at,
-    # created_by (FK -> users.user_id, nullable),  ← now points to users, not admins
-    # updated_at
-    pass
+    skill_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), unique=True, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    # TODO: Define relationships:
-    # - creator_user (User, FK created_by)
-    # - users (many-to-many via user_skills)
-    # - jobs (many-to-many via job_skills)
+    # Relationships
+    creator_user = relationship("User", foreign_keys=[created_by])
+    users = relationship("User", secondary=user_skills, back_populates="skills")
+    jobs = relationship("Job", secondary=job_skills, back_populates="skills")

@@ -83,6 +83,12 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
+    def update_admin_password(self, admin: Admin, new_hashed_password: str) -> Admin:
+        admin.password = new_hashed_password
+        self.db.commit()
+        self.db.refresh(admin)
+        return admin
+
     def soft_delete_user(self, user: User) -> User:
         user.deleted_at = datetime.now(timezone.utc)
         self.db.commit()
