@@ -1,0 +1,22 @@
+# Python virtual environments & bytecode
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Node.js & Vite build outputs
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+node_modules/
+dist/
+
+# Logs & Secrets
+*.log
+.env
+.env.local
