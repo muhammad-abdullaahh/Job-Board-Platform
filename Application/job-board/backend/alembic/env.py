@@ -1,6 +1,11 @@
+import os
+import sys
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+
+# Ensure src/ is in Python path for app imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from app.config import settings
 from app.database import Base
