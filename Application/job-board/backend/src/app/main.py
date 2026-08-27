@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from sqlalchemy import text
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routes import auth, jobs, applications, companies, users
@@ -17,7 +18,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Job Board Platform API",
-    description="REST API for Job Board Platform — FastAPI + SQLite/PostgreSQL",
+    description="REST API for Job Board Platform — FastAPI + PostgreSQL",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -51,3 +52,15 @@ def health_check():
         "status": "healthy",
         "service": "Job Board Platform API"
     }
+
+@app.get("/ready")
+def readiness_check():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {
+            "status": "ready",
+            "database": "connected"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database connection failed: {e}")

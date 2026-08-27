@@ -40,7 +40,7 @@ class CompanyRepository:
         self.db.refresh(company)
         return company
 
-    def update(self, company: Company, company_in, admin_id: Optional[int] = None) -> Company:
+    def update(self, company: Company, company_in, updater_user_id: Optional[int] = None) -> Company:
         update_data = company_in.dict(exclude_unset=True)
         is_verified = update_data.pop('is_verified', None)
 
@@ -49,11 +49,11 @@ class CompanyRepository:
 
         if is_verified is not None:
             company.is_verified = is_verified
-            if is_verified and admin_id:
-                company.verified_by = admin_id
+            if is_verified and updater_user_id:
+                company.verified_by = updater_user_id
 
-        if admin_id:
-            company.updated_by = admin_id
+        if updater_user_id:
+            company.updated_by = updater_user_id
 
         self.db.commit()
         self.db.refresh(company)

@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.dependencies.auth import get_current_user, get_current_user_or_admin
+from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.services.application_service import ApplicationService
 from app.schemas.application_schema import ApplicationCreate, ApplicationStatusUpdate, ApplicationResponse
@@ -29,7 +29,7 @@ def get_my_applications(
 @router.get("/job/{job_id}", response_model=List[ApplicationResponse])
 def get_job_applications(
     job_id: int,
-    current_auth: dict = Depends(get_current_user_or_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
@@ -39,13 +39,12 @@ def get_job_applications(
 def update_application_status(
     application_id: int,
     status_in: ApplicationStatusUpdate,
-    current_auth: dict = Depends(get_current_user_or_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    updater_id = current_auth.get("user_id") or current_auth.get("admin_id")
     service = ApplicationService(db)
     return service.update_application_status(
         application_id=application_id,
         new_status=status_in.status,
-        updater_user_id=updater_id
+        updater_user_id=current_user.user_id
     )

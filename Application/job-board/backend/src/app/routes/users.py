@@ -27,7 +27,7 @@ def update_user_profile(
 @router.get("", response_model=List[UserResponse])
 def get_all_users(
     db: Session = Depends(get_db),
-    admin: dict = Depends(require_admin)
+    admin: User = Depends(require_admin)
 ):
     service = UserService(db)
     return service.get_all_users()
@@ -36,7 +36,7 @@ def get_all_users(
 def soft_delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: dict = Depends(require_admin)
+    admin: User = Depends(require_admin)
 ):
     service = UserService(db)
     service.delete_user(user_id)
@@ -51,7 +51,7 @@ def get_all_skills(db: Session = Depends(get_db)):
 def create_skill(
     skill_in: SkillCreate,
     db: Session = Depends(get_db),
-    admin: dict = Depends(require_admin)
+    admin: User = Depends(require_admin)
 ):
     repo = SkillRepository(db)
     existing = repo.get_by_name(skill_in.name)
@@ -60,5 +60,4 @@ def create_skill(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Skill '{skill_in.name}' already exists."
         )
-    admin_id = admin.get("admin_id")
-    return repo.create(name=skill_in.name, admin_id=admin_id)
+    return repo.create(name=skill_in.name, created_by_user_id=admin.user_id)

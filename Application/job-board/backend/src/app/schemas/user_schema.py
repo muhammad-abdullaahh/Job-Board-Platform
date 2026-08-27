@@ -22,20 +22,12 @@ class UserResponse(BaseModel):
     user_id: int
     name: str
     email: EmailStr
+    is_admin: bool = False
     bio: Optional[str] = None
-    years_of_experience: int
+    years_of_experience: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
     skills: List[SkillResponse] = []
-
-    class Config:
-        from_attributes = True
-
-class AdminResponse(BaseModel):
-    admin_id: int
-    name: str
-    email: EmailStr
-    created_at: datetime
 
     class Config:
         from_attributes = True

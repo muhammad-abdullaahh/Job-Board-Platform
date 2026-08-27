@@ -21,8 +21,6 @@ def get_current_user(
         )
 
     user_id_str = payload.get("sub")
-    role = payload.get("role")
-
     if not user_id_str:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,21 +28,6 @@ def get_current_user(
         )
 
     repo = UserRepository(db)
-    
-    if role == "admin":
-        # Check admin user
-        email = payload.get("email")
-        admin = repo.get_admin_by_email(email) if email else None
-        if admin:
-            # Create a mock/compatible user object for admin
-            return User(
-                user_id=admin.admin_id,
-                name=admin.name,
-                email=admin.email,
-                is_admin=True,
-                years_experience=0
-            )
-
     user_id = int(user_id_str)
     user = repo.get_user_by_id(user_id)
     if not user:
@@ -56,27 +39,7 @@ def get_current_user(
     return user
 
 def get_current_user_or_admin(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> dict:
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials or token expired.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id_str = payload.get("sub")
-    role = payload.get("role", "user")
-
-    if not user_id_str:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token payload.",
-        )
-
-    user_id = int(user_id_str)
-    if role == "admin":
-        return {"admin_id": user_id, "user_id": user_id, "role": "admin"}
-    return {"user_id": user_id, "role": "user"}
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Alias for get_current_user since all users (including admins) use the single User identity."""
+    return current_user

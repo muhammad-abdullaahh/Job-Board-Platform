@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from app.models.user import User, Admin
+from app.models.user import User
 from app.core.security import get_password_hash
 
 class UserRepository:
@@ -17,9 +17,6 @@ class UserRepository:
             )
             .first()
         )
-
-    def get_admin_by_email(self, email: str) -> Optional[Admin]:
-        return self.db.query(Admin).filter(Admin.email == email).first()
 
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         return (
@@ -45,25 +42,14 @@ class UserRepository:
             name=user_in.name,
             email=user_in.email,
             password=hashed_pw,
+            is_admin=getattr(user_in, 'is_admin', False),
             bio=getattr(user_in, 'bio', None),
-            years_experience=getattr(user_in, 'years_experience', 0),
+            years_experience=getattr(user_in, 'years_of_experience', getattr(user_in, 'years_experience', 0)),
         )
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
         return user
-
-    def create_admin(self, admin_in) -> Admin:
-        hashed_pw = get_password_hash(admin_in.password)
-        admin = Admin(
-            name=admin_in.name,
-            email=admin_in.email,
-            password=hashed_pw,
-        )
-        self.db.add(admin)
-        self.db.commit()
-        self.db.refresh(admin)
-        return admin
 
     def update_user(self, user: User, user_in) -> User:
         update_data = user_in.dict(exclude_unset=True)
@@ -82,12 +68,6 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
-
-    def update_admin_password(self, admin: Admin, new_hashed_password: str) -> Admin:
-        admin.password = new_hashed_password
-        self.db.commit()
-        self.db.refresh(admin)
-        return admin
 
     def soft_delete_user(self, user: User) -> User:
         user.deleted_at = datetime.now(timezone.utc)

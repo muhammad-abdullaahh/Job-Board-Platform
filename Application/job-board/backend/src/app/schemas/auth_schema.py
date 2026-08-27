@@ -24,13 +24,7 @@ class UserRegisterRequest(BaseModel):
     password: str
     bio: Optional[str] = None
     years_of_experience: int = 0
-    is_admin: bool = False   # True only for admin registration
-
-class AdminRegisterRequest(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    is_admin: bool = True
+    is_admin: bool = False   # Set True if registering an admin user
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

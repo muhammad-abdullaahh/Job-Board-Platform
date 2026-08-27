@@ -23,9 +23,9 @@ class CompanyService:
     def create_company(self, company_in, created_by_user_id: Optional[int] = None) -> Company:
         return self.company_repo.create(company_in, created_by_user_id)
 
-    def update_company(self, company_id: int, company_in, admin_id: Optional[int] = None) -> Company:
+    def update_company(self, company_id: int, company_in, updater_user_id: Optional[int] = None) -> Company:
         company = self.get_company(company_id)
-        return self.company_repo.update(company, company_in, admin_id)
+        return self.company_repo.update(company, company_in, updater_user_id)
 
     def rename_company(self, company_id: int, new_name: str, updated_by_user_id: int) -> Company:
         company = self.get_company(company_id)

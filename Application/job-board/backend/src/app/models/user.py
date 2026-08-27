@@ -26,12 +26,3 @@ class User(Base):
     skills = relationship("Skill", secondary=user_skills, back_populates="users")
     applications = relationship("Application", foreign_keys="[Application.user_id]", back_populates="applicant", cascade="all, delete-orphan")
 
-
-class Admin(Base):
-    __tablename__ = "admins"
-
-    admin_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -15,10 +15,10 @@ class SkillRepository:
     def get_by_name(self, name: str) -> Optional[Skill]:
         return self.db.query(Skill).filter(Skill.name.ilike(name)).first()
 
-    def create(self, name: str, admin_id: Optional[int] = None) -> Skill:
+    def create(self, name: str, created_by_user_id: Optional[int] = None) -> Skill:
         skill = Skill(
             name=name,
-            created_by=admin_id
+            created_by=created_by_user_id
         )
         self.db.add(skill)
         self.db.commit()

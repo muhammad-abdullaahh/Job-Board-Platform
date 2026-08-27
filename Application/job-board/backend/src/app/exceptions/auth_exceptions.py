@@ -20,15 +20,6 @@ class UserAlreadyExistsException(AppException):
         )
 
 
-class AdminAlreadyExistsException(AppException):
-    """Raised when trying to register an admin with an email that is already taken."""
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An admin with this email already exists."
-        )
-
-
 class UnauthorizedException(AppException):
     """Raised when a request is made without a valid token."""
     def __init__(self):
