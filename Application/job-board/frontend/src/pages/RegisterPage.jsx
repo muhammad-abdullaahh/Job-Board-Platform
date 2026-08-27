@@ -23,8 +23,12 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="page-container auth-page">
-      <h2>Register</h2>
+    <div className="auth-page">
+      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Create an Account</h2>
+      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem' }}>
+        Join thousands of professionals & top companies
+      </p>
+
       {error && <div className="error-banner">{error}</div>}
 
       <form onSubmit={handleSubmit}>
@@ -62,17 +66,21 @@ export const RegisterPage = () => {
         </div>
 
         <div className="form-group">
-          <label>Role</label>
+          <label>Account Type</label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="job_seeker">Job Seeker</option>
-            <option value="employer">Employer</option>
+            <option value="job_seeker">Job Seeker (Candidate)</option>
+            <option value="employer">Employer (Hiring Company)</option>
           </select>
         </div>
 
-        <button type="submit" className="btn btn-primary">Sign Up</button>
+        <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.8rem' }}>
+          Create Account &rarr;
+        </button>
       </form>
 
-      <p>Already have an account? <Link to="/login">Log In</Link></p>
+      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Log In</Link>
+      </p>
     </div>
   );
 };

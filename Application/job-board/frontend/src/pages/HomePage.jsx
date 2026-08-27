@@ -17,19 +17,25 @@ export const HomePage = () => {
 
   return (
     <div className="page-container home-page">
-      <section className="hero">
-        <h1>Find Your Next Career Opportunity</h1>
-        <p>Explore top job listings and connect with employers.</p>
+      <section className="hero-section">
+        <h1>Find Your Dream Career</h1>
+        <p>Discover top opportunities, connect with verified employers, and advance your professional journey.</p>
+        <a href="/jobs" className="btn btn-primary" style={{ padding: '0.85rem 1.85rem', fontSize: '1.05rem' }}>
+          Browse All Jobs &rarr;
+        </a>
       </section>
 
       <section className="featured-jobs">
-        <h2>Featured Jobs</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2>Featured Opportunities</h2>
+          <span className="badge badge-accent">Live Jobs</span>
+        </div>
         {loading ? (
-          <p>Loading jobs...</p>
+          <p style={{ color: 'var(--text-muted)' }}>Loading featured opportunities...</p>
         ) : jobs.length === 0 ? (
-          <p>No job listings found.</p>
+          <p style={{ color: 'var(--text-muted)' }}>No job listings available right now.</p>
         ) : (
-          <div className="jobs-list">
+          <div className="jobs-grid">
             {jobs.map((job) => (
               <JobCard key={job.job_id || job.id} job={job} />
             ))}

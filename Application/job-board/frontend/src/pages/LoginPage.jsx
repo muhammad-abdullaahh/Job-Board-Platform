@@ -24,8 +24,12 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="page-container auth-page">
-      <h2>Log In</h2>
+    <div className="auth-page">
+      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Welcome Back</h2>
+      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem' }}>
+        Log in to access your dashboard & opportunities
+      </p>
+
       {error && <div className="error-banner">{error}</div>}
 
       <form onSubmit={handleSubmit}>
@@ -41,7 +45,12 @@ export const LoginPage = () => {
         </div>
 
         <div className="form-group">
-          <label>Password</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <label style={{ margin: 0 }}>Password</label>
+            <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--accent-hover)', textDecoration: 'none', fontWeight: 600 }}>
+              Forgot password?
+            </Link>
+          </div>
           <input
             type="password"
             value={password}
@@ -51,11 +60,14 @@ export const LoginPage = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary">Log In</button>
+        <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.8rem' }}>
+          Log In &rarr;
+        </button>
       </form>
 
-      <p>Don't have an account? <Link to="/register">Register</Link></p>
-      <p><Link to="/forgot-password">Forgot password?</Link></p>
+      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none' }}>Register Now</Link>
+      </p>
     </div>
   );
 };

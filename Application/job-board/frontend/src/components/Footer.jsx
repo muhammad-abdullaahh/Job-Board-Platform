@@ -4,7 +4,7 @@ export const Footer = () => {
   return (
     <footer className="footer">
       <div className="container">
-        <p>&copy; {new Date().getFullYear()} Job Board Platform. Skeleton Structure.</p>
+        <p>&copy; {new Date().getFullYear()} JobBoard Platform — Empowering Top Careers & Talent.</p>
       </div>
     </footer>
   );

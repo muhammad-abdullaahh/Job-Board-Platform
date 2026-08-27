@@ -1,7 +1,10 @@
 import axiosClient from './axiosClient';
 
-export const loginApi = async (email, password) => {
-  const response = await axiosClient.post('/auth/login', { email, password });
+export const loginApi = async (emailOrData, password) => {
+  const payload = typeof emailOrData === 'object' 
+    ? emailOrData 
+    : { email: emailOrData, password };
+  const response = await axiosClient.post('/auth/login', payload);
   return response.data;
 };
 
@@ -9,6 +12,7 @@ export const registerUserApi = async (userData) => {
   const response = await axiosClient.post('/auth/register', userData);
   return response.data;
 };
+export const registerApi = registerUserApi;
 
 export const forgotPasswordApi = async (email) => {
   const response = await axiosClient.post('/auth/forgot-password', { email });

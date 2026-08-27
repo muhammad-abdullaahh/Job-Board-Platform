@@ -11,8 +11,6 @@ export const deleteUserApi = async (userId) => {
 };
 
 export const verifyCompanyApi = async (companyId) => {
-  const response = await axiosClient.put(`/companies/${companyId}`, {
-    is_verified: true,
-  });
+  const response = await axiosClient.patch(`/companies/${companyId}/verify`);
   return response.data;
 };
