@@ -3,6 +3,7 @@ from typing import Optional
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
     role: str        # "admin" or "user" — derived from is_admin field
     user_id: int

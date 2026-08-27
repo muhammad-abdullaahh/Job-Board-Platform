@@ -22,3 +22,13 @@ export const resetPasswordApi = async (token, newPassword) => {
   });
   return response.data;
 };
+
+export const refreshTokenApi = async () => {
+  const response = await axiosClient.post('/auth/refresh');
+  return response.data;
+};
+
+export const logoutApi = async () => {
+  const response = await axiosClient.post('/auth/logout');
+  return response.data;
+};

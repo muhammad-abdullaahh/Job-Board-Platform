@@ -5,6 +5,8 @@ from app.core.security import (
     verify_password,
     get_password_hash,
     create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
     create_password_reset_token,
     verify_password_reset_token,
 )
@@ -24,11 +26,15 @@ class AuthService:
 
         user = self.user_repo.create_user(user_in)
         role = "admin" if user.is_admin else "user"
-        token_str = create_access_token(
+        access_token_str = create_access_token(
+            data={"sub": str(user.user_id), "role": role, "email": user.email}
+        )
+        refresh_token_str = create_refresh_token(
             data={"sub": str(user.user_id), "role": role, "email": user.email}
         )
         return Token(
-            access_token=token_str,
+            access_token=access_token_str,
+            refresh_token=refresh_token_str,
             token_type="bearer",
             role=role,
             user_id=user.user_id,
@@ -45,11 +51,60 @@ class AuthService:
             )
 
         role = "admin" if user.is_admin else "user"
-        token_str = create_access_token(
+        access_token_str = create_access_token(
+            data={"sub": str(user.user_id), "role": role, "email": user.email}
+        )
+        refresh_token_str = create_refresh_token(
             data={"sub": str(user.user_id), "role": role, "email": user.email}
         )
         return Token(
-            access_token=token_str,
+            access_token=access_token_str,
+            refresh_token=refresh_token_str,
+            token_type="bearer",
+            role=role,
+            user_id=user.user_id,
+            name=user.name,
+            email=user.email,
+        )
+
+    def refresh_access_token(self, refresh_token_str: str) -> Token:
+        if not refresh_token_str:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token cookie missing."
+            )
+        
+        payload = decode_refresh_token(refresh_token_str)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token."
+            )
+        
+        user_id_str = payload.get("sub")
+        if not user_id_str:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload."
+            )
+            
+        user = self.user_repo.get_user_by_id(int(user_id_str))
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User associated with token no longer exists."
+            )
+
+        role = "admin" if user.is_admin else "user"
+        new_access_token = create_access_token(
+            data={"sub": str(user.user_id), "role": role, "email": user.email}
+        )
+        new_refresh_token = create_refresh_token(
+            data={"sub": str(user.user_id), "role": role, "email": user.email}
+        )
+        return Token(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
             token_type="bearer",
             role=role,
             user_id=user.user_id,
