@@ -1,7 +1,13 @@
+-- -----------------------------------------------------------------------------
+-- PART 1: ENUM TYPES
+-- -----------------------------------------------------------------------------
+
 CREATE TYPE employment_type_enum AS ENUM (
     'full_time',
     'part_time',
-    'contract'
+    'contract',
+    'remote',
+    'internship'
 );
 
 CREATE TYPE job_status_enum AS ENUM (
@@ -14,37 +20,40 @@ CREATE TYPE application_status_enum AS ENUM (
     'pending',
     'reviewed',
     'shortlisted',
-    'accepted',
-    'rejected'
+    'offer_issued',
+    'offer_accepted',
+    'offer_declined',
+    'hired',
+    'rejected',
+    'expired'
 );
 
-CREATE TABLE admins (
-    admin_id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
+-- -----------------------------------------------------------------------------
+-- PART 2: TABLES
+-- -----------------------------------------------------------------------------
 
+-- 1. USERS (Unified model — is_admin = TRUE means admin)
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     bio TEXT,
-    years_of_experience INT NOT NULL DEFAULT 0
-        CHECK (years_of_experience >= 0),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP,
-    deleted_at TIMESTAMP,
+    years_experience INT NOT NULL DEFAULT 0
+        CHECK (years_experience >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ,
     deleted_by INT,
 
     CONSTRAINT fk_users_deleted_by
         FOREIGN KEY (deleted_by)
-        REFERENCES admins(admin_id)
+        REFERENCES users(user_id)
         ON DELETE SET NULL
 );
 
+-- 2. COMPANIES
 CREATE TABLE companies (
     company_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -53,63 +62,71 @@ CREATE TABLE companies (
     location VARCHAR(255),
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     verified_by INT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
     updated_by INT,
-    deleted_at TIMESTAMP,
+    deleted_at TIMESTAMPTZ,
     deleted_by INT,
 
     CONSTRAINT fk_companies_verified_by
         FOREIGN KEY (verified_by)
-        REFERENCES admins(admin_id)
+        REFERENCES users(user_id)
         ON DELETE SET NULL,
 
     CONSTRAINT fk_companies_updated_by
         FOREIGN KEY (updated_by)
-        REFERENCES admins(admin_id)
+        REFERENCES users(user_id)
         ON DELETE SET NULL,
 
     CONSTRAINT fk_companies_deleted_by
         FOREIGN KEY (deleted_by)
-        REFERENCES admins(admin_id)
+        REFERENCES users(user_id)
         ON DELETE SET NULL
 );
 
+-- 3. SKILLS
 CREATE TABLE skills (
     skill_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INT,
-    updated_at TIMESTAMP,
+    updated_at TIMESTAMPTZ,
 
     CONSTRAINT fk_skills_created_by
         FOREIGN KEY (created_by)
-        REFERENCES admins(admin_id)
+        REFERENCES users(user_id)
         ON DELETE SET NULL
 );
 
+-- 4. JOBS
 CREATE TABLE jobs (
     job_id SERIAL PRIMARY KEY,
     company_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     location VARCHAR(255),
-    salary_min INT NOT NULL
-        CHECK (salary_min >= 0),
-    salary_max INT NOT NULL
-        CHECK (salary_max >= salary_min),
-    employment_type employment_type_enum NOT NULL,
+    salary_min INT
+        CHECK (salary_min IS NULL OR salary_min >= 0),
+    salary_max INT
+        CHECK (salary_max IS NULL OR salary_min IS NULL OR salary_max >= salary_min),
+    employment_type employment_type_enum NOT NULL DEFAULT 'full_time',
     status job_status_enum NOT NULL DEFAULT 'open',
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INT,
+    updated_at TIMESTAMPTZ,
     updated_by INT,
-    deleted_at TIMESTAMP,
+    deleted_at TIMESTAMPTZ,
     deleted_by INT,
 
     CONSTRAINT fk_jobs_company
         FOREIGN KEY (company_id)
         REFERENCES companies(company_id)
         ON DELETE CASCADE,
+
+    CONSTRAINT fk_jobs_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(user_id)
+        ON DELETE SET NULL,
 
     CONSTRAINT fk_jobs_updated_by
         FOREIGN KEY (updated_by)
@@ -122,16 +139,20 @@ CREATE TABLE jobs (
         ON DELETE SET NULL
 );
 
+-- 5. APPLICATIONS
 CREATE TABLE applications (
     application_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     job_id INT NOT NULL,
     cover_letter TEXT NOT NULL,
     status application_status_enum NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INT,
+    updated_at TIMESTAMPTZ,
     updated_by INT,
-    deleted_at TIMESTAMP,
+    offer_issued_at TIMESTAMPTZ,
+    offer_expires_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ,
 
     CONSTRAINT fk_applications_user
         FOREIGN KEY (user_id)
@@ -143,6 +164,11 @@ CREATE TABLE applications (
         REFERENCES jobs(job_id)
         ON DELETE CASCADE,
 
+    CONSTRAINT fk_applications_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(user_id)
+        ON DELETE SET NULL,
+
     CONSTRAINT fk_applications_updated_by
         FOREIGN KEY (updated_by)
         REFERENCES users(user_id)
@@ -152,37 +178,51 @@ CREATE TABLE applications (
         UNIQUE (user_id, job_id)
 );
 
+-- 6. USER_SKILLS (Junction Table)
 CREATE TABLE user_skills (
     user_id INT NOT NULL,
     skill_id INT NOT NULL,
 
     PRIMARY KEY (user_id, skill_id),
 
-    FOREIGN KEY (user_id)
+    CONSTRAINT fk_user_skills_user
+        FOREIGN KEY (user_id)
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (skill_id)
+    CONSTRAINT fk_user_skills_skill
+        FOREIGN KEY (skill_id)
         REFERENCES skills(skill_id)
         ON DELETE CASCADE
 );
 
+-- 7. JOB_SKILLS (Junction Table)
 CREATE TABLE job_skills (
     job_id INT NOT NULL,
     skill_id INT NOT NULL,
 
     PRIMARY KEY (job_id, skill_id),
 
-    FOREIGN KEY (job_id)
+    CONSTRAINT fk_job_skills_job
+        FOREIGN KEY (job_id)
         REFERENCES jobs(job_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (skill_id)
+    CONSTRAINT fk_job_skills_skill
+        FOREIGN KEY (skill_id)
         REFERENCES skills(skill_id)
         ON DELETE CASCADE
 );
 
--- PART 2: INDEXES
+-- -----------------------------------------------------------------------------
+-- PART 3: INDEXES
+-- -----------------------------------------------------------------------------
+
+CREATE INDEX idx_users_email
+    ON users (email);
+
+CREATE INDEX idx_jobs_title
+    ON jobs (title);
 
 CREATE INDEX idx_jobs_status_location
     ON jobs (status, location);
@@ -199,11 +239,26 @@ CREATE INDEX idx_jobs_salary_range
 CREATE INDEX idx_jobs_company_id
     ON jobs (company_id);
 
+CREATE INDEX idx_jobs_created_by
+    ON jobs (created_by);
+
+CREATE INDEX idx_jobs_updated_by
+    ON jobs (updated_by);
+
+CREATE INDEX idx_jobs_deleted_by
+    ON jobs (deleted_by);
+
 CREATE INDEX idx_applications_user_id
     ON applications (user_id);
 
 CREATE INDEX idx_applications_job_id
     ON applications (job_id);
+
+CREATE INDEX idx_applications_created_by
+    ON applications (created_by);
+
+CREATE INDEX idx_applications_updated_by
+    ON applications (updated_by);
 
 CREATE INDEX idx_companies_verified_by
     ON companies (verified_by);
@@ -217,18 +272,8 @@ CREATE INDEX idx_companies_deleted_by
 CREATE INDEX idx_users_deleted_by
     ON users (deleted_by);
 
-CREATE INDEX idx_jobs_updated_by
-    ON jobs (updated_by);
-
-CREATE INDEX idx_jobs_deleted_by
-    ON jobs (deleted_by);
-
-CREATE INDEX idx_applications_updated_by
-    ON applications (updated_by);
-
 CREATE INDEX idx_skills_created_by
     ON skills (created_by);
-
 
 CREATE INDEX idx_job_skills_skill_id
     ON job_skills (skill_id);
@@ -236,6 +281,7 @@ CREATE INDEX idx_job_skills_skill_id
 CREATE INDEX idx_user_skills_skill_id
     ON user_skills (skill_id);
 
+-- Partial Indexes for Active Records
 CREATE INDEX idx_jobs_active
     ON jobs (job_id) WHERE deleted_at IS NULL;
 
@@ -248,7 +294,9 @@ CREATE INDEX idx_companies_active
 CREATE INDEX idx_users_active
     ON users (user_id) WHERE deleted_at IS NULL;
 
--- PART 3: TRANSACTIONS ON AUDIT COLUMNS
+-- -----------------------------------------------------------------------------
+-- PART 4: TRIGGERS FOR AUDIT COLUMNS
+-- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -282,7 +330,3 @@ CREATE TRIGGER trg_skills_updated_at
     BEFORE UPDATE ON skills
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
-
-
-
-
