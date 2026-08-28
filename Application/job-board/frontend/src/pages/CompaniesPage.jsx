@@ -53,16 +53,16 @@ export const CompaniesPage = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <h3 style={{ fontSize: '1.25rem', color: 'var(--primary)', margin: 0 }}>{company.name}</h3>
                   {company.is_verified ? (
-                    <span className="badge status-accepted" style={{ fontSize: '0.75rem' }}>✓ Verified</span>
+                    <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>✓ Verified</span>
                   ) : (
-                    <span className="badge status-applied" style={{ fontSize: '0.75rem' }}>Pending</span>
+                    <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>Pending</span>
                   )}
                 </div>
 
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {company.location && <span>📍 Location: {company.location}</span>}
                   {company.website && (
-                    <span>🌐 Website: <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-hover)' }}>{company.website}</a></span>
+                    <span>🌐 Website: <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>{company.website}</a></span>
                   )}
                 </div>
 

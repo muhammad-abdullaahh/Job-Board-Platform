@@ -13,6 +13,12 @@ class Company(Base):
     website = Column(String(255), nullable=True)
     location = Column(String(255), nullable=True)
 
+    # Verification Metadata Fields for Admin Audit
+    employee_count = Column(String(100), nullable=True)
+    hr_contact_email = Column(String(255), nullable=True)
+    cro_linkedin = Column(String(255), nullable=True)
+    registration_number = Column(String(100), nullable=True)
+
     is_verified = Column(Boolean, default=False, nullable=False)
     verified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 

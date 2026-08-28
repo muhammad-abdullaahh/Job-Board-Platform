@@ -43,6 +43,10 @@ class CompanyRepository:
             description=company_in.description,
             website=company_in.website,
             location=company_in.location,
+            employee_count=getattr(company_in, 'employee_count', None),
+            hr_contact_email=getattr(company_in, 'hr_contact_email', None),
+            cro_linkedin=getattr(company_in, 'cro_linkedin', None),
+            registration_number=getattr(company_in, 'registration_number', None),
             is_verified=False,
             updated_by=created_by_user_id,
         )

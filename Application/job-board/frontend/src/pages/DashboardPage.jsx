@@ -148,14 +148,14 @@ export const DashboardPage = () => {
             </p>
 
             {myCompany.is_verified ? (
-              <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '1.25rem', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <span style={{ color: '#065F46', fontWeight: 600 }}>Your company is verified! You have full access to post jobs and review candidate applications.</span>
-                <button onClick={() => setShowJobModal(true)} className="btn btn-primary">
+              <div style={{ background: 'var(--primary-subtle)', border: '1px solid var(--border-emerald)', padding: '1.25rem', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Your company profile is verified! You can publish listings and review applications.</span>
+                <button onClick={() => setShowJobModal(true)} className="btn btn-emerald">
                   + Post a New Job
                 </button>
               </div>
             ) : (
-              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', color: '#92400E' }}>
+              <div style={{ background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', color: '#EAB308' }}>
                 💡 <strong>Approval Pending:</strong> Your company profile is undergoing administrator review. Once verified, job posting capabilities will be enabled.
               </div>
             )}
@@ -163,16 +163,16 @@ export const DashboardPage = () => {
             {/* Managed Jobs Section for Employers */}
             {myCompany.is_verified && (
               <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-light)', paddingTop: '1.5rem' }}>
-                <h4 style={{ marginBottom: '1rem', fontSize: '1.15rem' }}>Posted Jobs & Applications ({myJobs.length})</h4>
+                <h4 style={{ marginBottom: '1rem', fontSize: '1.15rem', color: 'var(--primary)' }}>Posted Jobs & Applications ({myJobs.length})</h4>
                 {myJobs.length === 0 ? (
                   <p style={{ color: 'var(--text-muted)' }}>You haven't posted any jobs yet. Click "+ Post a New Job" above to create your first listing.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {myJobs.map((job) => (
-                      <div key={job.job_id} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', background: '#F8FAFC' }}>
+                      <div key={job.job_id} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '1.2rem', background: 'var(--surface-elevated)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <div>
-                            <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{job.title}</strong>
+                            <strong style={{ fontSize: '1.1rem', color: '#FFFFFF' }}>{job.title}</strong>
                             <span style={{ marginLeft: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📍 {job.location || 'Remote'}</span>
                           </div>
                           <button
@@ -195,9 +195,9 @@ export const DashboardPage = () => {
                             ) : (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {selectedJobApps[job.job_id].map((applicantApp) => (
-                                  <div key={applicantApp.application_id} style={{ background: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                  <div key={applicantApp.application_id} style={{ background: 'var(--surface-card)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                                     <div>
-                                      <strong>{applicantApp.applicant?.name || applicantApp.applicant?.email || `Applicant #${applicantApp.user_id}`}</strong>
+                                      <strong style={{ color: 'var(--text-main)' }}>{applicantApp.applicant?.name || applicantApp.applicant?.email || `Applicant #${applicantApp.user_id}`}</strong>
                                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0' }}>
                                         {applicantApp.cover_letter}
                                       </p>
@@ -207,7 +207,7 @@ export const DashboardPage = () => {
                                       <select
                                         value={applicantApp.status}
                                         onChange={(e) => handleStatusChange(applicantApp.application_id, e.target.value, job.job_id)}
-                                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.8rem', borderRadius: '4px' }}
+                                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem', borderRadius: '6px', background: 'var(--bg-main)', color: '#FFFFFF', border: '1px solid var(--border-light)' }}
                                       >
                                         <option value="pending">Pending</option>
                                         <option value="reviewed">Reviewed</option>
@@ -246,21 +246,56 @@ export const DashboardPage = () => {
       {/* --- ADMIN APPROVAL PANEL (Visible to Admins) --- */}
       {isAdmin && (
         <section className="dashboard-section" style={{ marginBottom: '3rem' }}>
-          <h2 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#B91C1C' }}>
-            👑 Admin Verification Panel (Manage Companies)
-          </h2>
-          <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.75rem', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: '1.5rem', color: '#F8FAFC', margin: 0 }}>
+              👑 Admin Verification Panel
+            </h2>
+            <span className="badge" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+              Organization Governance
+            </span>
+          </div>
+
+          <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-emerald)', borderRadius: 'var(--radius-lg)', padding: '1.75rem', boxShadow: 'var(--shadow-md)' }}>
             {companies.filter(c => !c.is_verified).length === 0 ? (
               <p style={{ color: 'var(--text-muted)' }}>All registered companies are currently verified.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {companies.filter(c => !c.is_verified).map((comp) => (
-                  <div key={comp.company_id || comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: '#FAF5FF' }}>
-                    <div>
-                      <h4 style={{ color: 'var(--primary)' }}>{comp.name}</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📍 {comp.location || 'Location N/A'} • ID: {comp.company_id}</p>
+                  <div key={comp.company_id || comp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '1.35rem 1.5rem', border: '1px solid var(--border-emerald)', borderRadius: 'var(--radius-md)', background: 'var(--surface-elevated)', gap: '1.25rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '280px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                        <h4 style={{ color: 'var(--primary)', fontSize: '1.25rem', margin: 0 }}>{comp.name}</h4>
+                        <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>ID #{comp.company_id}</span>
+                      </div>
+
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                        📍 Location: <strong>{comp.location || 'N/A'}</strong> {comp.website && <>• 🌐 <a href={comp.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>{comp.website}</a></>}
+                      </p>
+
+                      {/* Audit Verification Metadata Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.65rem', background: 'var(--surface-card)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                          👥 <strong>Company Size:</strong> {comp.employee_count || 'Not Specified'}
+                        </div>
+                        <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                          📧 <strong>HR Email:</strong> {comp.hr_contact_email ? <a href={`mailto:${comp.hr_contact_email}`} style={{ color: 'var(--primary)' }}>{comp.hr_contact_email}</a> : 'N/A'}
+                        </div>
+                        <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                          🔗 <strong>CRO/Executive LinkedIn:</strong> {comp.cro_linkedin ? <a href={comp.cro_linkedin} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-cyan)' }}>View Profile &rarr;</a> : 'N/A'}
+                        </div>
+                        <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
+                          📑 <strong>Registration/Tax ID:</strong> {comp.registration_number || 'N/A'}
+                        </div>
+                      </div>
+
+                      {comp.description && (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                          "{comp.description}"
+                        </p>
+                      )}
                     </div>
-                    <button onClick={() => handleVerifyCompany(comp.company_id || comp.id)} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+
+                    <button onClick={() => handleVerifyCompany(comp.company_id || comp.id)} className="btn btn-emerald" style={{ padding: '0.65rem 1.35rem', fontSize: '0.875rem', alignSelf: 'center' }}>
                       ✓ Approve & Verify Company
                     </button>
                   </div>
@@ -301,23 +336,23 @@ export const DashboardPage = () => {
 
                 {/* Offer Action Buttons for Candidates */}
                 {app.status === 'offer_issued' && (
-                  <div style={{ borderTop: '1px solid #A7F3D0', background: '#ECFDF5', padding: '1rem', borderRadius: 'var(--radius-sm)', marginTop: '0.5rem' }}>
+                  <div style={{ borderTop: '1px solid var(--border-emerald)', background: 'var(--primary-subtle)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginTop: '0.5rem' }}>
                     <OfferTimerBadge expiresAt={app.offer_expires_at} />
-                    <p style={{ fontSize: '0.85rem', color: '#065F46', margin: '0.5rem 0 0.75rem 0', fontWeight: 600 }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--primary)', margin: '0.5rem 0 0.75rem 0', fontWeight: 600 }}>
                       Congratulations! An offer has been issued for this position.
                     </p>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
                         onClick={() => handleStatusChange(app.application_id, 'offer_accepted')}
-                        className="btn btn-primary"
-                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.85rem' }}
+                        className="btn btn-emerald"
+                        style={{ flex: 1, padding: '0.45rem', fontSize: '0.85rem' }}
                       >
                         Accept Offer
                       </button>
                       <button
                         onClick={() => handleStatusChange(app.application_id, 'offer_declined')}
                         className="btn btn-outline"
-                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.85rem', color: 'var(--error)' }}
+                        style={{ flex: 1, padding: '0.45rem', fontSize: '0.85rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#EF4444' }}
                       >
                         Decline
                       </button>
