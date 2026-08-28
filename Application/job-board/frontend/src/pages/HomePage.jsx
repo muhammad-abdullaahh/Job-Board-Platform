@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchJobsApi } from '../api/jobsApi';
 import { JobCard } from '../components/JobCard';
 
@@ -20,9 +21,9 @@ export const HomePage = () => {
       <section className="hero-section">
         <h1>Find Your Dream Career</h1>
         <p>Discover top opportunities, connect with verified employers, and advance your professional journey.</p>
-        <a href="/jobs" className="btn btn-primary" style={{ padding: '0.85rem 1.85rem', fontSize: '1.05rem' }}>
+        <Link to="/jobs" className="btn btn-primary" style={{ padding: '0.85rem 1.85rem', fontSize: '1.05rem' }}>
           Browse All Jobs &rarr;
-        </a>
+        </Link>
       </section>
 
       <section className="featured-jobs">

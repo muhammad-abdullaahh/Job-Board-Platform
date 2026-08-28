@@ -31,6 +31,8 @@ class CompanyResponse(BaseModel):
     is_verified: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
+    updated_by: Optional[int] = None
 
     class Config:
         from_attributes = True
+

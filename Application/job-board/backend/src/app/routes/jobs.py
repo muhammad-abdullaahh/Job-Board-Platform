@@ -15,7 +15,7 @@ def search_jobs(
     q: Optional[str] = Query(None),
     location: Optional[str] = Query(None),
     employment_type: Optional[EmploymentType] = Query(None),
-    status: Optional[JobStatus] = Query(JobStatus.open),
+    status: Optional[JobStatus] = Query(None),
     min_salary: Optional[int] = Query(None),
     company_id: Optional[int] = Query(None),
     skip: int = 0,

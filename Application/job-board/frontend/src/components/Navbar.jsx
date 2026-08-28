@@ -20,6 +20,7 @@ export const Navbar = () => {
 
         <nav className="nav-links">
           <Link to="/jobs" className="nav-link">Explore Jobs</Link>
+          <Link to="/companies" className="nav-link">Employers</Link>
 
           {isAuthenticated ? (
             <div className="nav-user">

@@ -73,9 +73,11 @@ class ApplicationRepository:
         if updater_user_id:
             application.updated_by = updater_user_id
         
-        # When an offer letter is issued, set the 48-hour expiration timer!
+        # When an offer letter is issued, set both offer_issued_at and the 48-hour expiration timer!
         if status == ApplicationStatus.offer_issued:
-            application.offer_expires_at = datetime.now(timezone.utc) + timedelta(hours=48)
+            now = datetime.now(timezone.utc)
+            application.offer_issued_at = now
+            application.offer_expires_at = now + timedelta(hours=48)
 
         self.db.commit()
         self.db.refresh(application)

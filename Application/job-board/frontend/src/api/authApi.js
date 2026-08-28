@@ -14,15 +14,22 @@ export const registerUserApi = async (userData) => {
 };
 export const registerApi = registerUserApi;
 
-export const forgotPasswordApi = async (email) => {
+export const forgotPasswordApi = async (emailOrData) => {
+  const email = typeof emailOrData === 'object' ? emailOrData.email : emailOrData;
   const response = await axiosClient.post('/auth/forgot-password', { email });
   return response.data;
 };
 
-export const resetPasswordApi = async (token, newPassword) => {
+export const resetPasswordApi = async (tokenOrData, newPassword) => {
+  let token = tokenOrData;
+  let password = newPassword;
+  if (typeof tokenOrData === 'object' && tokenOrData !== null) {
+    token = tokenOrData.token;
+    password = tokenOrData.new_password || tokenOrData.password;
+  }
   const response = await axiosClient.post('/auth/reset-password', {
     token,
-    new_password: newPassword,
+    new_password: password,
   });
   return response.data;
 };

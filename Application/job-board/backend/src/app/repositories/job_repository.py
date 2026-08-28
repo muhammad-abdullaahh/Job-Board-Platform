@@ -76,10 +76,14 @@ class JobRepository:
             skills = self.db.query(Skill).filter(Skill.skill_id.in_(job_in.skill_ids)).all()
             job.skills = skills
 
-        self.db.add(job)
-        self.db.commit()
-        self.db.refresh(job)
-        return job
+        try:
+            self.db.add(job)
+            self.db.commit()
+            self.db.refresh(job)
+            return job
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update(self, job: Job, job_in, user_id: Optional[int] = None) -> Job:
         update_data = job_in.dict(exclude_unset=True)
@@ -95,9 +99,13 @@ class JobRepository:
         if user_id:
             job.updated_by = user_id
 
-        self.db.commit()
-        self.db.refresh(job)
-        return job
+        try:
+            self.db.commit()
+            self.db.refresh(job)
+            return job
+        except Exception:
+            self.db.rollback()
+            raise
 
     def soft_delete(self, job: Job, deleted_by_user_id: int) -> Job:
         job.deleted_at = datetime.now(timezone.utc)

@@ -8,7 +8,7 @@ export const ForgotPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await forgotPasswordApi({ email });
+      await forgotPasswordApi(email);
       setMessage('Password reset instructions have been sent.');
     } catch (err) {
       setMessage('Failed to process request.');

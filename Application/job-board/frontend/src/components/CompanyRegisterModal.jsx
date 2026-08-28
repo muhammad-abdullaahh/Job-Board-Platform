@@ -3,7 +3,6 @@ import { createCompanyApi } from '../api/companiesApi';
 
 export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
   const [name, setName] = useState('');
-  const [industry, setIndustry] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [website, setWebsite] = useState('');
@@ -17,7 +16,6 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
     try {
       await createCompanyApi({
         name,
-        industry,
         description,
         location,
         website,
@@ -51,17 +49,6 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
               placeholder="e.g. Acme Technologies"
               style={{ padding: '0.55rem 0.85rem' }}
               required
-            />
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '0.85rem' }}>
-            <label style={{ marginBottom: '0.3rem', fontSize: '0.85rem' }}>Industry</label>
-            <input
-              type="text"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              placeholder="e.g. Software & IT, Healthcare"
-              style={{ padding: '0.55rem 0.85rem' }}
             />
           </div>
 

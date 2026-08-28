@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerApi } from '../api/authApi';
+import { useAuth } from '../auth/useAuth';
 
 export const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -9,14 +10,16 @@ export const RegisterPage = () => {
   const [role, setRole] = useState('job_seeker');
   const [error, setError] = useState(null);
 
+  const { loginUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     try {
-      await registerApi({ name, email, password, role });
-      navigate('/login');
+      const data = await registerApi({ name, email, password, is_admin: role === 'admin' });
+      loginUser(data);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'Registration failed.');
     }

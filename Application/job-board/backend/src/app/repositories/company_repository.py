@@ -27,6 +27,16 @@ class CompanyRepository:
             .first()
         )
 
+    def get_by_owner(self, user_id: int) -> Optional[Company]:
+        return (
+            self.db.query(Company)
+            .filter(
+                Company.updated_by == user_id,
+                Company.deleted_at.is_(None)
+            )
+            .first()
+        )
+
     def create(self, company_in, created_by_user_id: Optional[int] = None) -> Company:
         company = Company(
             name=company_in.name,
@@ -34,6 +44,7 @@ class CompanyRepository:
             website=company_in.website,
             location=company_in.location,
             is_verified=False,
+            updated_by=created_by_user_id,
         )
         self.db.add(company)
         self.db.commit()
@@ -44,6 +55,7 @@ class CompanyRepository:
         update_data = company_in.dict(exclude_unset=True)
         is_verified = update_data.pop('is_verified', None)
 
+        # Update remaining data fields
         for field, value in update_data.items():
             setattr(company, field, value)
 
@@ -52,7 +64,8 @@ class CompanyRepository:
             if is_verified and updater_user_id:
                 company.verified_by = updater_user_id
 
-        if updater_user_id:
+        # Only update owner/updated_by if updating info fields, not solely verifying
+        if updater_user_id and update_data:
             company.updated_by = updater_user_id
 
         self.db.commit()

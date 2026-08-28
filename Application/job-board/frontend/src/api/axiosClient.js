@@ -8,12 +8,19 @@ const axiosClient = axios.create({
   },
 });
 
-// Interceptor to attach Bearer token from localStorage
+let inMemoryToken = null;
+
+export const setMemoryToken = (token) => {
+  inMemoryToken = token;
+};
+
+export const getMemoryToken = () => inMemoryToken;
+
+// Interceptor to attach Bearer token from in-memory state
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('job_board_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (inMemoryToken) {
+      config.headers.Authorization = `Bearer ${inMemoryToken}`;
     }
     return config;
   },
@@ -37,14 +44,13 @@ axiosClient.interceptors.response.use(
         const res = await axiosClient.post('/auth/refresh');
         if (res.data && res.data.access_token) {
           const newToken = res.data.access_token;
-          localStorage.setItem('job_board_token', newToken);
-          window.dispatchEvent(new Event('auth_token_refreshed'));
+          setMemoryToken(newToken);
+          window.dispatchEvent(new CustomEvent('auth_token_refreshed', { detail: res.data }));
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return axiosClient(originalRequest);
         }
       } catch (refreshError) {
-        localStorage.removeItem('job_board_token');
-        localStorage.removeItem('job_board_user');
+        setMemoryToken(null);
         window.dispatchEvent(new Event('auth_logout'));
         return Promise.reject(refreshError);
       }

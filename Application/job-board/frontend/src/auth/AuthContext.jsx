@@ -1,22 +1,56 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { logoutApi } from '../api/authApi';
+import { logoutApi, refreshTokenApi } from '../api/authApi';
+import { setMemoryToken } from '../api/axiosClient';
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(() => localStorage.getItem('job_board_token') || null);
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('job_board_user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Silent token refresh on app startup using httpOnly cookie
   useEffect(() => {
-    const handleTokenRefreshed = () => {
-      const updatedToken = localStorage.getItem('job_board_token');
-      setToken(updatedToken);
+    const initAuth = async () => {
+      try {
+        const data = await refreshTokenApi();
+        if (data && data.access_token) {
+          setMemoryToken(data.access_token);
+          setToken(data.access_token);
+          setUser({
+            user_id: data.user_id,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+          });
+        }
+      } catch (e) {
+        setMemoryToken(null);
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    const handleTokenRefreshed = (e) => {
+      const detail = e.detail;
+      if (detail && detail.access_token) {
+        setMemoryToken(detail.access_token);
+        setToken(detail.access_token);
+        setUser({
+          user_id: detail.user_id,
+          name: detail.name,
+          email: detail.email,
+          role: detail.role,
+        });
+      }
     };
 
     const handleAuthLogout = () => {
+      setMemoryToken(null);
       setToken(null);
       setUser(null);
     };
@@ -38,10 +72,9 @@ export const AuthProvider = ({ children }) => {
       email: authData.email,
       role: authData.role,
     };
+    setMemoryToken(authData.access_token);
     setToken(authData.access_token);
     setUser(userObj);
-    localStorage.setItem('job_board_token', authData.access_token);
-    localStorage.setItem('job_board_user', JSON.stringify(userObj));
   };
 
   const logoutUser = async () => {
@@ -50,15 +83,14 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       // Ignore network errors on logout
     }
+    setMemoryToken(null);
     setToken(null);
     setUser(null);
-    localStorage.removeItem('job_board_token');
-    localStorage.removeItem('job_board_user');
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, loginUser, logoutUser, isAuthenticated: !!token }}>
-      {children}
+    <AuthContext.Provider value={{ token, user, loginUser, logoutUser, isAuthenticated: !!token, loading }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

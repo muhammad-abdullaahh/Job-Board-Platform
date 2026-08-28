@@ -33,7 +33,7 @@ def get_job_applications(
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.get_job_applications(job_id=job_id)
+    return service.get_job_applications(job_id=job_id, requesting_user_id=current_user.user_id)
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
 def update_application_status(

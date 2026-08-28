@@ -12,6 +12,7 @@ import { HomePage } from './pages/HomePage';
 import { JobListingsPage } from './pages/JobListingsPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { CompanyDetailPage } from './pages/CompanyDetailPage';
+import { CompaniesPage } from './pages/CompaniesPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -39,6 +40,7 @@ export function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/jobs" element={<JobListingsPage />} />
               <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+              <Route path="/companies" element={<CompaniesPage />} />
               <Route path="/companies/:companyId" element={<CompanyDetailPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

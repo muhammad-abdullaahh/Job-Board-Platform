@@ -21,6 +21,13 @@ class CompanyService:
         return company
 
     def create_company(self, company_in, created_by_user_id: Optional[int] = None) -> Company:
+        if created_by_user_id:
+            existing = self.company_repo.get_by_owner(created_by_user_id)
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You already have a registered company profile."
+                )
         return self.company_repo.create(company_in, created_by_user_id)
 
     def update_company(self, company_id: int, company_in, updater_user_id: Optional[int] = None) -> Company:

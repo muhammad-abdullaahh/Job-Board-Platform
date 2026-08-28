@@ -1,10 +1,12 @@
+import uuid
 from contextlib import asynccontextmanager
 from sqlalchemy import text
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routes import auth, jobs, applications, companies, users
 from app.scheduler import start_scheduler
+from app.core.error_handlers import http_exception_handler, generic_exception_handler
 import app.models  # Ensure all models are loaded
 
 @asynccontextmanager
@@ -22,6 +24,19 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Register Exception Handlers for Machine-Readable Responses
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
+
+# Correlation ID Middleware (Spec #13)
+@app.middleware("http")
+async def add_correlation_id_middleware(request: Request, call_next):
+    correlation_id = request.headers.get("X-Correlation-ID") or f"req-{uuid.uuid4().hex[:12]}"
+    request.state.correlation_id = correlation_id
+    response = await call_next(request)
+    response.headers["X-Correlation-ID"] = correlation_id
+    return response
 
 app.add_middleware(
     CORSMiddleware,

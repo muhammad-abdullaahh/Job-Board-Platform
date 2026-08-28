@@ -12,10 +12,13 @@ export const ApplicationModal = ({ job, onClose, onSuccess }) => {
     setLoading(true);
     setError(null);
     try {
+      const fullCoverLetter = resumeUrl 
+        ? `${coverLetter}\n\n[Resume Link]: ${resumeUrl}`.trim()
+        : coverLetter;
+        
       await applyForJobApi({
         job_id: job.job_id || job.id,
-        cover_letter: coverLetter,
-        resume_url: resumeUrl,
+        cover_letter: fullCoverLetter,
       });
       setLoading(false);
       if (onSuccess) onSuccess();
