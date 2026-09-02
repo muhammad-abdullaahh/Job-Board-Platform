@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
@@ -47,11 +47,12 @@ def update_company(
 @router.patch("/{company_id}/verify", response_model=CompanyResponse)
 def verify_company(
     company_id: int,
+    is_verified: bool = Query(True, description="Verification status to set"),
     admin_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     service = CompanyService(db)
-    comp_update = CompanyUpdate(is_verified=True)
+    comp_update = CompanyUpdate(is_verified=is_verified)
     return service.update_company(company_id, comp_update, updater_user_id=admin_user.user_id)
 
 @router.patch("/{company_id}/name", response_model=CompanyResponse)

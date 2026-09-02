@@ -4,7 +4,7 @@ from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routes import auth, jobs, applications, companies, users
+from app.routes import auth, jobs, applications, companies, users, admin
 from app.scheduler import start_scheduler
 from app.core.error_handlers import http_exception_handler, generic_exception_handler
 import app.models  # Ensure all models are loaded
@@ -57,6 +57,7 @@ app.include_router(jobs.router, prefix="/api/v1")
 app.include_router(applications.router, prefix="/api/v1")
 app.include_router(companies.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 @app.get("/")
 def root():

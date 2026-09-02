@@ -24,3 +24,13 @@ class SkillRepository:
         self.db.commit()
         self.db.refresh(skill)
         return skill
+
+    def update(self, skill: Skill, new_name: str) -> Skill:
+        skill.name = new_name
+        self.db.commit()
+        self.db.refresh(skill)
+        return skill
+
+    def delete(self, skill: Skill) -> None:
+        self.db.delete(skill)
+        self.db.commit()

@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.company import Company
+from app.models.job import Job
+from app.models.application import Application
 
 class CompanyRepository:
     def __init__(self, db: Session):
@@ -84,8 +86,24 @@ class CompanyRepository:
         return company
 
     def soft_delete(self, company: Company, deleted_by_user_id: int) -> Company:
-        company.deleted_at = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc)
+        company.deleted_at = now
         company.deleted_by = deleted_by_user_id
+
+        # Cascade soft-delete to jobs belonging to this company
+        jobs = self.db.query(Job).filter(Job.company_id == company.company_id, Job.deleted_at.is_(None)).all()
+        job_ids = [j.job_id for j in jobs]
+        for job in jobs:
+            job.deleted_at = now
+            job.deleted_by = deleted_by_user_id
+
+        # Cascade soft-delete to applications for these jobs
+        if job_ids:
+            self.db.query(Application).filter(
+                Application.job_id.in_(job_ids),
+                Application.deleted_at.is_(None)
+            ).update({"deleted_at": now}, synchronize_session=False)
+
         self.db.commit()
         self.db.refresh(company)
         return company

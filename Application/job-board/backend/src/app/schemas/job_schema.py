@@ -29,6 +29,10 @@ class JobUpdate(BaseModel):
     skill_ids: Optional[List[int]] = None
 
 
+class AdminJobStatusUpdate(BaseModel):
+    status: JobStatus
+
+
 class JobResponse(BaseModel):
     job_id: int
     company_id: int

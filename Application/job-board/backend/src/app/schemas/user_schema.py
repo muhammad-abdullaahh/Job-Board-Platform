@@ -18,6 +18,9 @@ class UserUpdate(BaseModel):
     years_of_experience: Optional[int] = None
     skill_ids: Optional[List[int]] = None
 
+class AdminRoleUpdate(BaseModel):
+    is_admin: bool
+
 class UserResponse(BaseModel):
     user_id: int
     name: str
@@ -27,6 +30,8 @@ class UserResponse(BaseModel):
     years_of_experience: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+    deleted_by: Optional[int] = None
     skills: List[SkillResponse] = []
 
     class Config:
