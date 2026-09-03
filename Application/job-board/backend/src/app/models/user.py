@@ -19,6 +19,14 @@ class User(Base):
     bio = Column(Text, nullable=True)
     years_experience = Column(Integer, default=0, nullable=False)
 
+    @property
+    def years_of_experience(self) -> int:
+        return self.years_experience or 0
+
+    @years_of_experience.setter
+    def years_of_experience(self, val: int):
+        self.years_experience = val or 0
+
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 

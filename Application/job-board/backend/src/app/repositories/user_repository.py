@@ -42,7 +42,7 @@ class UserRepository:
             password=hashed_pw,
             is_admin=getattr(user_in, 'is_admin', False),
             bio=getattr(user_in, 'bio', None),
-            years_experience=getattr(user_in, 'years_of_experience', getattr(user_in, 'years_experience', 0)),
+            years_experience=getattr(user_in, 'years_of_experience', None) or getattr(user_in, 'years_experience', 0) or 0,
         )
         self.db.add(user)
         self.db.commit()
@@ -54,8 +54,14 @@ class UserRepository:
         if 'password' in update_data and update_data['password']:
             update_data['password'] = get_password_hash(update_data['password'])
 
+        if 'years_of_experience' in update_data:
+            user.years_experience = update_data.pop('years_of_experience') or 0
+
+        update_data.pop('skill_ids', None)
+
         for field, value in update_data.items():
-            setattr(user, field, value)
+            if hasattr(user, field):
+                setattr(user, field, value)
 
         self.db.commit()
         self.db.refresh(user)

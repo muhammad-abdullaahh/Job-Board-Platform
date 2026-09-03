@@ -41,6 +41,8 @@ export const RegisterPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [yearsExperience, setYearsExperience] = useState(0);
+  const [bio, setBio] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
 
@@ -61,7 +63,14 @@ export const RegisterPage = () => {
     }
 
     try {
-      const data = await registerApi({ name, email, password, is_admin: false });
+      const data = await registerApi({
+        name,
+        email,
+        password,
+        years_of_experience: Number(yearsExperience) || 0,
+        bio: bio.trim() || null,
+        is_admin: false
+      });
       loginUser(data);
       navigate('/dashboard');
     } catch (err) {
@@ -174,6 +183,28 @@ export const RegisterPage = () => {
             )}
           </div>
         )}
+
+        <div className="form-group">
+          <label>Years of Professional Experience</label>
+          <input
+            type="number"
+            min="0"
+            max="60"
+            value={yearsExperience}
+            onChange={(e) => setYearsExperience(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Professional Bio</label>
+          <textarea
+            rows={3}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="Brief introduction about your background, career focus, or target roles..."
+          />
+        </div>
 
         <button
           type="submit"

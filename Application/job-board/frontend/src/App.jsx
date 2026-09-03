@@ -29,11 +29,23 @@ const ProtectedRoute = ({ children }) => {
 };
 
 export function App() {
+  const [isCollapsed, setIsCollapsed] = React.useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   return (
     <AuthProvider>
       <Router>
-        <div className="sidebar-layout">
-          <Sidebar />
+        <div className={`sidebar-layout ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+          <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
           <div className="layout-body">
             <main className="main-content">
               <Routes>

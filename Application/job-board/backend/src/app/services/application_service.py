@@ -1,11 +1,12 @@
-from typing import List
+from datetime import datetime, timezone
+from typing import List, Union
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.job_repository import JobRepository
 from app.models.application import Application, ApplicationStatus
 from app.models.job import JobStatus
-
+from app.schemas.application_schema import ApplicationResponse
 from app.repositories.user_repository import UserRepository
 
 VALID_TRANSITIONS = {
@@ -120,7 +121,6 @@ class ApplicationService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Access denied. Only the applicant candidate can respond to this job offer."
                 )
-
         # 3. Employer candidate evaluation authorization
         else:
             if not is_company_owner and not is_admin:
@@ -128,5 +128,28 @@ class ApplicationService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Access denied. Only the hiring employer who posted this job can manage candidate application statuses."
                 )
+
+        # 4. Handle candidate offer acceptance -> Hard delete job posting from database
+        if new_status == ApplicationStatus.offer_accepted:
+            now = datetime.now(timezone.utc)
+            response_payload = ApplicationResponse(
+                application_id=app.application_id,
+                user_id=app.user_id,
+                job_id=app.job_id,
+                cover_letter=app.cover_letter,
+                status=ApplicationStatus.offer_accepted,
+                created_at=app.created_at,
+                updated_at=now,
+                offer_issued_at=app.offer_issued_at,
+                offer_expires_at=app.offer_expires_at,
+                job=None,
+                applicant=None
+            )
+
+            job = self.job_repo.get_any_by_id(app.job_id)
+            if job:
+                self.job_repo.hard_delete(job)
+
+            return response_payload
 
         return self.app_repo.update_status(app, new_status, updater_user_id)

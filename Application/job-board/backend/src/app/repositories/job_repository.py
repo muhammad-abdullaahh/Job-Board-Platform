@@ -19,6 +19,9 @@ class JobRepository:
             .first()
         )
 
+    def get_any_by_id(self, job_id: int) -> Optional[Job]:
+        return self.db.query(Job).filter(Job.job_id == job_id).first()
+
     def get_by_id_and_company(self, job_id: int, company_id: int) -> Optional[Job]:
         return (
             self.db.query(Job)
@@ -113,3 +116,11 @@ class JobRepository:
         self.db.commit()
         self.db.refresh(job)
         return job
+
+    def hard_delete(self, job: Job) -> None:
+        try:
+            self.db.delete(job)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
