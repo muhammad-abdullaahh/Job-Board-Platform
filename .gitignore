@@ -50,3 +50,6 @@ ehthumbs.db
 .idea/
 *.swp
 *.swo
+
+# Local Commands reference
+Commands.txt
