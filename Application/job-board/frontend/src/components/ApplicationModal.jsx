@@ -60,8 +60,8 @@ export const ApplicationModal = ({ job, onClose, onSuccess }) => {
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
               You need an active Candidate account to submit job applications and track your progress.
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-              <Link to="/login" className="btn btn-outline" onClick={onClose} style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/login" className="btn btn-outline" onClick={onClose} style={{ flex: 1, minWidth: '120px' }}>
                 Log In
               </Link>
               <Link to="/register" className="btn btn-emerald" onClick={onClose} style={{ flex: 1 }}>

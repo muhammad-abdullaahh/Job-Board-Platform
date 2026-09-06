@@ -65,7 +65,7 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
         {error && <div className="error-banner">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+          <div className="modal-grid-2col" style={{ marginBottom: '0.85rem' }}>
             <div className="form-group" style={{ marginBottom: '0.85rem' }}>
               <label style={{ marginBottom: '0.3rem', fontSize: '0.85rem' }}>Company Name *</label>
               <input
@@ -90,7 +90,7 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+          <div className="modal-grid-2col" style={{ marginBottom: '0.85rem' }}>
             <div className="form-group" style={{ marginBottom: '0.85rem' }}>
               <label style={{ marginBottom: '0.3rem', fontSize: '0.85rem' }}>Official Website URL</label>
               <input
@@ -118,7 +118,7 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+          <div className="modal-grid-2col" style={{ marginBottom: '0.85rem' }}>
             <div className="form-group" style={{ marginBottom: '0.85rem' }}>
               <label style={{ marginBottom: '0.3rem', fontSize: '0.85rem' }}>HR / Contact Email *</label>
               <input

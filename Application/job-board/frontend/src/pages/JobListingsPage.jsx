@@ -30,25 +30,25 @@ export const JobListingsPage = () => {
         <p style={{ color: 'var(--text-secondary)' }}>Find your next role among active positions from verified companies.</p>
       </div>
 
-      <div className="filter-section" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+      <div className="filter-section" style={{ marginBottom: '2rem' }}>
         <input
           type="text"
           placeholder="🔍 Search title or keyword..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 2, minWidth: '220px', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
+          style={{ flex: 2, minWidth: 'min(100%, 220px)', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
         />
         <input
           type="text"
           placeholder="📍 Filter location..."
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          style={{ flex: 1, minWidth: '160px', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
+          style={{ flex: 1, minWidth: 'min(100%, 160px)', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
         />
         <select
           value={employmentType}
           onChange={(e) => setEmploymentType(e.target.value)}
-          style={{ flex: 1, minWidth: '160px', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
+          style={{ flex: 1, minWidth: 'min(100%, 160px)', padding: '0.85rem 1.1rem', fontSize: '0.95rem' }}
         >
           <option value="">All Employment Types</option>
           <option value="full_time">Full Time</option>

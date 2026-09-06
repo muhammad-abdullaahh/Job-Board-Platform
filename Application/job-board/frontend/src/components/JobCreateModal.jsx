@@ -74,7 +74,7 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
+          <div className="modal-grid-2col" style={{ marginBottom: '0.85rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ fontSize: '0.85rem' }}>Employment Type</label>
               <select value={employmentType} onChange={(e) => setEmploymentType(e.target.value)}>
@@ -97,7 +97,7 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
+          <div className="modal-grid-2col" style={{ marginBottom: '0.85rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ fontSize: '0.85rem' }}>Minimum Salary ($)</label>
               <input

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
 from app.database import engine, Base
 from app.routes import auth, jobs, applications, companies, users, admin
 from app.scheduler import start_scheduler
@@ -38,14 +39,20 @@ async def add_correlation_id_middleware(request: Request, call_next):
     response.headers["X-Correlation-ID"] = correlation_id
     return response
 
+# Configure CORS origins
+cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+if settings.CORS_ORIGINS:
+    extra_origins = [orig.strip() for orig in settings.CORS_ORIGINS.split(",") if orig.strip()]
+    cors_origins.extend(extra_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000"
-    ],
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origins=cors_origins,
+    allow_origin_regex=r"^(http://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

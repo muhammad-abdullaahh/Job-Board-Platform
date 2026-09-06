@@ -46,7 +46,7 @@ export const CompaniesPage = () => {
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Try adjusting your search query.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+        <div className="companies-grid">
           {filteredCompanies.map((company) => (
             <div key={company.company_id} className="job-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>

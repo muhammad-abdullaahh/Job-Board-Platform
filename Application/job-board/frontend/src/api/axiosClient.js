@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// Use environment variable VITE_API_URL if provided, else fallback to relative path /api/v1
+const rawBaseUrl = import.meta.env.VITE_API_URL;
+const baseURL = rawBaseUrl
+  ? `${rawBaseUrl.replace(/\/+$/, '')}/api/v1`
+  : '/api/v1';
+
 const axiosClient = axios.create({
-  baseURL: '/api/v1',
+  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

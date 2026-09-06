@@ -38,7 +38,7 @@ export const HomePage = () => {
       </section>
 
       {/* Quick Metrics Bar */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '3.5rem' }}>
+      <section className="metrics-grid">
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
           <div style={{ color: 'var(--primary)', fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>{jobs.length}+</div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Active Job Positions</div>
@@ -55,7 +55,7 @@ export const HomePage = () => {
 
       {/* Featured Jobs Section */}
       <section className="featured-jobs">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.85rem' }}>Featured Opportunities</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Verified job listings from top hiring organizations.</p>

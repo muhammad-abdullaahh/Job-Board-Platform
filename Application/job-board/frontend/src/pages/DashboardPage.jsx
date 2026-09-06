@@ -422,7 +422,7 @@ export const DashboardPage = () => {
 
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.75rem', boxShadow: 'var(--shadow-sm)' }}>
           <form onSubmit={handleSaveProfile}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+            <div className="profile-grid">
               {/* Left Column: Basic Details */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
                 <div>
@@ -750,7 +750,7 @@ export const DashboardPage = () => {
           </div>
 
           {/* Admin Navigation Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderBottom: '1px solid var(--border-light)', paddingBottom: '1rem', marginBottom: '2rem' }}>
+          <div className="dashboard-tabs" style={{ borderBottom: '1px solid var(--border-light)' }}>
             <button
               onClick={() => setAdminTab('analytics')}
               className={`btn ${adminTab === 'analytics' ? 'btn-primary' : 'btn-outline'}`}
@@ -797,7 +797,7 @@ export const DashboardPage = () => {
           {adminTab === 'analytics' && analytics && (
             <div>
               {/* KPI Metric Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div className="kpi-grid">
                 <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Users</span>
@@ -865,7 +865,7 @@ export const DashboardPage = () => {
               </div>
 
               {/* Analytical Breakdowns Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+              <div className="breakdown-grid">
                 {/* Application Funnel Breakdown */}
                 <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
                   <h3 style={{ fontSize: '1.15rem', color: '#F8FAFC', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -979,7 +979,7 @@ export const DashboardPage = () => {
                 </div>
               </div>
 
-              <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', boxShadow: 'var(--shadow-md)', overflowX: 'auto' }}>
+              <div className="table-responsive">
                 {filteredAdminJobs.length === 0 ? (
                   <p style={{ color: 'var(--text-muted)', padding: '1.5rem', textAlign: 'center' }}>No job listings match the moderation criteria.</p>
                 ) : (
@@ -1132,7 +1132,7 @@ export const DashboardPage = () => {
                         boxShadow: 'var(--shadow-sm)'
                       }}
                     >
-                      <div style={{ flex: 1, minWidth: '280px' }}>
+                      <div style={{ flex: 1, minWidth: 'min(100%, 280px)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
                           <h4 style={{ color: 'var(--primary)', fontSize: '1.25rem', margin: 0 }}>{comp.name}</h4>
                           <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>ID #{comp.company_id || comp.id}</span>
@@ -1152,7 +1152,7 @@ export const DashboardPage = () => {
                         </p>
 
                         {/* Audit Verification Metadata Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.65rem', background: 'var(--surface-elevated)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '0.65rem', background: 'var(--surface-elevated)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '0.75rem' }}>
                           <div style={{ fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
                             👥 <strong>Company Size:</strong> {comp.employee_count || 'Not Specified'}
                           </div>
@@ -1175,7 +1175,7 @@ export const DashboardPage = () => {
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignSelf: 'center', minWidth: '180px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignSelf: 'center', minWidth: 'min(100%, 180px)' }}>
                         <button
                           onClick={() => handleToggleCompanyVerification(comp.company_id || comp.id, comp.is_verified)}
                           className={`btn ${comp.is_verified ? 'btn-outline' : 'btn-emerald'}`}
@@ -1250,7 +1250,7 @@ export const DashboardPage = () => {
               </div>
 
               {/* Skills Table */}
-              <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', boxShadow: 'var(--shadow-md)' }}>
+              <div className="table-responsive">
                 {filteredSkills.length === 0 ? (
                   <p style={{ color: 'var(--text-muted)', padding: '1.5rem', textAlign: 'center' }}>No skills found matching search.</p>
                 ) : (
@@ -1366,7 +1366,7 @@ export const DashboardPage = () => {
                 </div>
               </div>
 
-              <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-emerald)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', boxShadow: 'var(--shadow-md)', overflowX: 'auto' }}>
+              <div className="table-responsive">
                 {filteredUsers.length === 0 ? (
                   <p style={{ color: 'var(--text-muted)', padding: '1rem' }}>No users match the search/filter criteria.</p>
                 ) : (
@@ -1469,7 +1469,7 @@ export const DashboardPage = () => {
             <p style={{ color: 'var(--text-muted)' }}>No applications submitted yet. Browse jobs to submit your first application!</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          <div className="jobs-grid">
             {applications.map((app) => (
               <div key={app.application_id || app.id} style={{ background: 'var(--surface-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>

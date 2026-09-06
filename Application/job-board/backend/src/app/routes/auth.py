@@ -15,14 +15,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def set_refresh_cookie(response: Response, refresh_token: str):
     max_age = settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60
+    is_prod = settings.ENVIRONMENT.lower() == "production" or settings.COOKIE_SECURE
+    samesite = "none" if is_prod else settings.COOKIE_SAMESITE
+    secure = True if is_prod else settings.COOKIE_SECURE
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         max_age=max_age,
         expires=max_age,
-        samesite="lax",
-        secure=False,  # Set True in production with HTTPS
+        samesite=samesite,
+        secure=secure,
         path="/"
     )
 
@@ -58,7 +61,10 @@ def refresh_token(
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(response: Response):
-    response.delete_cookie(key="refresh_token", path="/")
+    is_prod = settings.ENVIRONMENT.lower() == "production" or settings.COOKIE_SECURE
+    samesite = "none" if is_prod else settings.COOKIE_SAMESITE
+    secure = True if is_prod else settings.COOKIE_SECURE
+    response.delete_cookie(key="refresh_token", path="/", samesite=samesite, secure=secure)
     return {"message": "Successfully logged out"}
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)

@@ -44,6 +44,15 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
             {!isCollapsed && <span className="logo-text">Career<span>Hub</span></span>}
           </Link>
 
+          {/* Mobile Drawer Close Button */}
+          <button
+            className="mobile-drawer-close-btn"
+            onClick={closeDrawer}
+            aria-label="Close navigation"
+          >
+            ✕
+          </button>
+
           {/* Desktop Collapse / Expand Toggle Button */}
           {toggleCollapse && (
             <button

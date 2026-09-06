@@ -26,10 +26,10 @@ export const CompanyDetailPage = () => {
 
   return (
     <div className="page-container company-detail-page">
-      <div style={{ background: 'var(--surface-card)', padding: '2.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-md)', marginBottom: '2.5rem' }}>
+      <div style={{ background: 'var(--surface-card)', padding: 'clamp(1.25rem, 3.5vw, 2.5rem)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-md)', marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div>
-            <h1 style={{ fontSize: '2.25rem', marginBottom: '0.25rem', color: 'var(--primary)' }}>{company.name}</h1>
+            <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.25rem', color: 'var(--primary)' }}>{company.name}</h1>
             {company.location && <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>📍 {company.location}</p>}
           </div>
           {company.is_verified ? (

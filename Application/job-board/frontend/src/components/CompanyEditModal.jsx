@@ -97,7 +97,7 @@ export const CompanyEditModal = ({ company, onClose, onSuccess }) => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="modal-grid-2col">
             <div className="form-group">
               <label style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }}>
                 Location (City, Country)
@@ -124,7 +124,7 @@ export const CompanyEditModal = ({ company, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="modal-grid-2col">
             <div className="form-group">
               <label style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }}>
                 Employee Count
@@ -157,7 +157,7 @@ export const CompanyEditModal = ({ company, onClose, onSuccess }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="modal-grid-2col">
             <div className="form-group">
               <label style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }}>
                 HR / Contact Email
@@ -197,7 +197,7 @@ export const CompanyEditModal = ({ company, onClose, onSuccess }) => {
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+          <div className="modal-actions" style={{ marginTop: '1rem' }}>
             <button type="button" onClick={onClose} className="btn btn-outline" disabled={loading}>
               Cancel
             </button>
