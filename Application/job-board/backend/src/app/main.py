@@ -1,3 +1,4 @@
+import os
 import uuid
 from contextlib import asynccontextmanager
 from sqlalchemy import text
@@ -14,10 +15,13 @@ import app.models  # Ensure all models are loaded
 async def lifespan(app: FastAPI):
     # Initialize DB tables
     Base.metadata.create_all(bind=engine)
-    # Start APScheduler background task for 48h offer expiration
-    scheduler = start_scheduler()
+    # Start APScheduler background task (skip on serverless where background threads are frozen)
+    scheduler = None
+    if not os.getenv("VERCEL"):
+        scheduler = start_scheduler()
     yield
-    scheduler.shutdown()
+    if scheduler:
+        scheduler.shutdown()
 
 app = FastAPI(
     title="Job Board Platform API",
