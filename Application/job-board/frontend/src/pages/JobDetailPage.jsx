@@ -31,10 +31,10 @@ export const JobDetailPage = () => {
   return (
     <div className="page-container job-detail-page">
       <div style={{ background: 'var(--surface-card)', padding: 'clamp(1.25rem, 3.5vw, 2.5rem)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-md)', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>{job.title}</h1>
-            <p className="company-name" style={{ fontSize: '1.1rem', color: 'var(--primary)', fontWeight: 600 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem', marginBottom: '1.25rem' }}>
+          <div style={{ flex: 1, minWidth: 'min(100%, 260px)' }}>
+            <h1 style={{ fontSize: 'clamp(1.6rem, 4.5vw, 2.25rem)', marginBottom: '0.4rem', color: 'var(--text-primary)', wordBreak: 'break-word' }}>{job.title}</h1>
+            <p className="company-name" style={{ fontSize: '1.05rem', color: 'var(--primary)', fontWeight: 600 }}>
               {job.company_id ? (
                 <Link to={`/companies/${job.company_id}`} style={{ color: 'var(--primary)', textDecoration: 'none' }}>
                   🏢 {companyName}
@@ -44,10 +44,10 @@ export const JobDetailPage = () => {
               )}
             </p>
           </div>
-          <span className="badge badge-primary" style={{ fontSize: '0.9rem', padding: '0.4rem 0.85rem' }}>{empType}</span>
+          <span className="badge badge-primary" style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', flexShrink: 0 }}>{empType}</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', gap: '0.6rem 1.25rem', flexWrap: 'wrap', marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.925rem' }}>
           <span>📍 {job.location || 'Remote'}</span>
           {formattedSalary && <span>💰 {formattedSalary}</span>}
           <span>📅 Posted {new Date(job.created_at || Date.now()).toLocaleDateString()}</span>
@@ -56,7 +56,7 @@ export const JobDetailPage = () => {
         {job.skills && job.skills.length > 0 && (
           <div style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Required Skills:</h4>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {job.skills.map((skill) => (
                 <span key={skill.skill_id || skill.name} className="badge badge-accent" style={{ fontSize: '0.8rem' }}>
                   {skill.name}
@@ -67,12 +67,12 @@ export const JobDetailPage = () => {
         )}
 
         <div className="job-description" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
-          <h3 style={{ marginBottom: '0.75rem' }}>Position Description</h3>
-          <p style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: 'var(--text-secondary)' }}>{job.description}</p>
+          <h3 style={{ marginBottom: '0.75rem', fontSize: '1.2rem' }}>Position Description</h3>
+          <p style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{job.description}</p>
         </div>
 
         <div style={{ marginTop: '2rem' }}>
-          <button onClick={() => setShowModal(true)} className="btn btn-primary" style={{ padding: '0.85rem 2rem', fontSize: '1.05rem' }}>
+          <button onClick={() => setShowModal(true)} className="btn btn-primary" style={{ minWidth: 'min(100%, 260px)', padding: '0.85rem 2rem', fontSize: '1.05rem' }}>
             Apply Now &rarr;
           </button>
         </div>

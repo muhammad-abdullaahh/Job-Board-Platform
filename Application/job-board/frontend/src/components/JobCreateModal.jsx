@@ -53,12 +53,36 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content" style={{ maxWidth: '650px' }}>
-        <h2>Post a New Opportunity</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
-          Create a new job listing for your organization.
-        </p>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0 }}>Post a New Opportunity</h2>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.2rem', fontSize: '0.875rem' }}>
+              Create a new job listing for your organization.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '1.4rem',
+              cursor: 'pointer',
+              minWidth: '40px',
+              minHeight: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              padding: 0
+            }}
+          >
+            ✕
+          </button>
+        </div>
 
         {error && <div className="error-banner">{error}</div>}
 

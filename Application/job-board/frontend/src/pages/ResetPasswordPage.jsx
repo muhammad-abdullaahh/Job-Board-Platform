@@ -28,8 +28,12 @@ export const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="page-container auth-page">
-      <h2>Reset Password</h2>
+    <div className="auth-page">
+      <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Reset Password</h2>
+      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem' }}>
+        Choose a secure new password for your account
+      </p>
+
       {message && <div className="success-banner">{message}</div>}
       {error && <div className="error-banner">{error}</div>}
 
@@ -40,10 +44,13 @@ export const ResetPasswordPage = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">Update Password</button>
+        <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.8rem' }}>
+          Update Password &rarr;
+        </button>
       </form>
     </div>
   );

@@ -27,11 +27,11 @@ export const HomePage = () => {
         <p>
           Connect directly with verified hiring teams, land high-paying roles, and track your application status in real-time.
         </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/jobs" className="btn btn-emerald" style={{ padding: '0.9rem 2rem', fontSize: '1.05rem' }}>
+        <div className="hero-cta-group">
+          <Link to="/jobs" className="btn btn-emerald">
             🚀 Explore Open Roles &rarr;
           </Link>
-          <Link to="/companies" className="btn btn-outline" style={{ padding: '0.9rem 2rem', fontSize: '1.05rem' }}>
+          <Link to="/companies" className="btn btn-outline">
             🏢 View Employers
           </Link>
         </div>
@@ -39,28 +39,28 @@ export const HomePage = () => {
 
       {/* Quick Metrics Bar */}
       <section className="metrics-grid">
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ color: 'var(--primary)', fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>{jobs.length}+</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Active Job Positions</div>
+        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: 'clamp(1rem, 3vw, 1.5rem)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+          <div style={{ color: 'var(--primary)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>{jobs.length}+</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>Active Job Positions</div>
         </div>
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ color: 'var(--accent-cyan)', fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>100%</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Verified Employers</div>
+        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: 'clamp(1rem, 3vw, 1.5rem)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+          <div style={{ color: 'var(--accent-cyan)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>100%</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>Verified Employers</div>
         </div>
-        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ color: '#EAB308', fontSize: '2rem', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>48 Hours</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Guaranteed Offer Window</div>
+        <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: 'clamp(1rem, 3vw, 1.5rem)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+          <div style={{ color: '#EAB308', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>48 Hours</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600 }}>Guaranteed Offer Window</div>
         </div>
       </section>
 
       {/* Featured Jobs Section */}
       <section className="featured-jobs">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.85rem' }}>
           <div>
-            <h2 style={{ fontSize: '1.85rem' }}>Featured Opportunities</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Verified job listings from top hiring organizations.</p>
+            <h2 style={{ fontSize: 'clamp(1.45rem, 3.5vw, 1.85rem)' }}>Featured Opportunities</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Verified job listings from top hiring organizations.</p>
           </div>
-          <Link to="/jobs" className="btn btn-outline" style={{ fontSize: '0.875rem' }}>
+          <Link to="/jobs" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
             View All Jobs &rarr;
           </Link>
         </div>

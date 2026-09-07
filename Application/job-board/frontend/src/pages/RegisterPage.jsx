@@ -158,7 +158,7 @@ export const RegisterPage = () => {
             </div>
 
             {/* Requirement Checklist */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem 0.6rem', fontSize: 'clamp(0.7rem, 2.4vw, 0.75rem)' }}>
               <span style={{ color: strength.checks.length ? 'var(--primary)' : 'var(--text-muted)', fontWeight: strength.checks.length ? 600 : 400 }}>
                 {strength.checks.length ? '✓' : '○'} 8+ Chars
               </span>

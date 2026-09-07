@@ -390,13 +390,13 @@ export const DashboardPage = () => {
       {/* Header Banner */}
       <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '2.25rem', marginBottom: '0.25rem' }}>Dashboard</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.25rem' }}>Dashboard</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             Welcome back, <strong style={{ color: 'var(--primary)' }}>{user?.name || user?.email}</strong> ({isAdmin ? 'System Administrator' : myCompany ? 'Employer' : 'Candidate'})
           </p>
         </div>
         {!myCompany && !isAdmin && (
-          <button onClick={() => setShowCompanyModal(true)} className="btn btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+          <button onClick={() => setShowCompanyModal(true)} className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', width: 'auto' }}>
             🏢 Register a Company &rarr;
           </button>
         )}
@@ -546,7 +546,7 @@ export const DashboardPage = () => {
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
                     Available Platform Skills:
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '220px', minHeight: '80px', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '0.25rem' }}>
                     {skillsList
                       .filter((s) => s.name.toLowerCase().includes(userSkillFilter.toLowerCase()))
                       .map((s) => {
@@ -587,7 +587,7 @@ export const DashboardPage = () => {
                 type="submit"
                 disabled={profileSaving}
                 className="btn btn-primary"
-                style={{ padding: '0.7rem 2rem', fontSize: '0.9rem' }}
+                style={{ padding: '0.75rem 2rem', fontSize: '0.95rem', minWidth: 'min(100%, 260px)' }}
               >
                 {profileSaving ? 'Saving Profile...' : '💾 Save Profile & Skills'}
               </button>
@@ -958,18 +958,18 @@ export const DashboardPage = () => {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '520px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '100%', justifyContent: 'flex-end' }}>
                   <input
                     type="text"
                     placeholder="Search job title, location or company..."
                     value={adminJobSearch}
                     onChange={(e) => setAdminJobSearch(e.target.value)}
-                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: 1, minWidth: '180px' }}
+                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '1 1 200px', minWidth: '180px' }}
                   />
                   <select
                     value={adminJobStatusFilter}
                     onChange={(e) => setAdminJobStatusFilter(e.target.value)}
-                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', width: 'auto' }}
+                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '0 1 160px', width: 'auto' }}
                   >
                     <option value="all">All Postings ({adminJobs.length})</option>
                     <option value="open">Live / Open</option>
@@ -1344,18 +1344,18 @@ export const DashboardPage = () => {
                 </div>
 
                 {/* Controls: Search and Filter */}
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '520px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '100%', justifyContent: 'flex-end' }}>
                   <input
                     type="text"
                     placeholder="Search user by name, email or ID..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: 1, minWidth: '180px' }}
+                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '1 1 200px', minWidth: '180px' }}
                   />
                   <select
                     value={userRoleFilter}
                     onChange={(e) => setUserRoleFilter(e.target.value)}
-                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', width: 'auto' }}
+                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '0 1 180px', width: 'auto' }}
                   >
                     <option value="all">All Users</option>
                     <option value="active">Active Accounts Only</option>

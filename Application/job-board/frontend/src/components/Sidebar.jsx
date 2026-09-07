@@ -7,6 +7,21 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
+  // On mobile drawer, always show full navigation regardless of desktop collapse state
+  const showFullNav = !isCollapsed || isOpen;
+
+  // Prevent background scrolling when mobile drawer is open
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const handleLogout = async () => {
     await logoutUser();
     setIsOpen(false);
@@ -19,14 +34,15 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
     <>
       {/* Mobile Top Header Bar */}
       <header className="mobile-header">
-        <Link to="/" className="sidebar-logo">
+        <Link to="/" className="sidebar-logo" onClick={closeDrawer}>
           <div className="logo-icon">CH</div>
           <span className="logo-text">Career<span>Hub</span></span>
         </Link>
         <button
           className="mobile-toggle-btn"
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle Navigation"
+          aria-label={isOpen ? "Close Navigation Menu" : "Open Navigation Menu"}
+          aria-expanded={isOpen}
         >
           {isOpen ? '✕' : '☰'}
         </button>
@@ -35,13 +51,13 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
       {/* Backdrop for Mobile Drawer */}
       {isOpen && <div className="sidebar-backdrop" onClick={closeDrawer} />}
 
-      {/* Persistent Left Sidebar */}
-      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'mobile-open' : ''}`}>
+      {/* Persistent Left Sidebar / Mobile Off-canvas Drawer */}
+      <aside className={`sidebar ${isCollapsed && !isOpen ? 'collapsed' : ''} ${isOpen ? 'mobile-open' : ''}`}>
         {/* Brand Header */}
         <div className="sidebar-header">
           <Link to="/" className="sidebar-logo" onClick={closeDrawer} title="CareerHub">
             <div className="logo-icon">CH</div>
-            {!isCollapsed && <span className="logo-text">Career<span>Hub</span></span>}
+            {showFullNav && <span className="logo-text">Career<span>Hub</span></span>}
           </Link>
 
           {/* Mobile Drawer Close Button */}
@@ -80,36 +96,36 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
 
         {/* Primary Navigation Menu */}
         <nav className="sidebar-nav">
-          {!isCollapsed && <div className="nav-section-title">NAVIGATION</div>}
+          {showFullNav && <div className="nav-section-title">NAVIGATION</div>}
           <NavLink
             to="/"
             end
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
             onClick={closeDrawer}
-            title={isCollapsed ? "Home" : undefined}
+            title={!showFullNav ? "Home" : undefined}
           >
             <span className="link-icon">🏠</span>
-            {!isCollapsed && <span className="link-label">Home</span>}
+            {showFullNav && <span className="link-label">Home</span>}
           </NavLink>
 
           <NavLink
             to="/jobs"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
             onClick={closeDrawer}
-            title={isCollapsed ? "Explore Jobs" : undefined}
+            title={!showFullNav ? "Explore Jobs" : undefined}
           >
             <span className="link-icon">💼</span>
-            {!isCollapsed && <span className="link-label">Explore Jobs</span>}
+            {showFullNav && <span className="link-label">Explore Jobs</span>}
           </NavLink>
 
           <NavLink
             to="/companies"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
             onClick={closeDrawer}
-            title={isCollapsed ? "Employers" : undefined}
+            title={!showFullNav ? "Employers" : undefined}
           >
             <span className="link-icon">🏢</span>
-            {!isCollapsed && <span className="link-label">Employers</span>}
+            {showFullNav && <span className="link-label">Employers</span>}
           </NavLink>
 
           {isAuthenticated && (
@@ -117,10 +133,10 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
               to="/dashboard"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               onClick={closeDrawer}
-              title={isCollapsed ? "Dashboard" : undefined}
+              title={!showFullNav ? "Dashboard" : undefined}
             >
               <span className="link-icon">⚡</span>
-              {!isCollapsed && <span className="link-label">Dashboard</span>}
+              {showFullNav && <span className="link-label">Dashboard</span>}
             </NavLink>
           )}
         </nav>
@@ -128,12 +144,12 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
         {/* Bottom User / Auth Section */}
         <div className="sidebar-footer">
           {isAuthenticated ? (
-            <div className="sidebar-user-card" title={isCollapsed ? `${user?.name || 'User'} (${user?.email})` : undefined}>
+            <div className="sidebar-user-card" title={!showFullNav ? `${user?.name || 'User'} (${user?.email})` : undefined}>
               <div className="user-info-row">
                 <div className="user-avatar">
                   {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
-                {!isCollapsed && (
+                {showFullNav && (
                   <div className="user-details">
                     <div className="user-name">{user?.name || 'User Profile'}</div>
                     <div className="user-email">{user?.email}</div>
@@ -141,7 +157,7 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
                 )}
               </div>
 
-              {!isCollapsed && (
+              {showFullNav && (
                 <div className="user-role-badge">
                   {user?.role === 'admin' || user?.is_admin ? (
                     <span className="role-tag role-admin">👑 Administrator</span>
@@ -159,18 +175,18 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
                 title="Sign Out"
               >
                 <span>🚪</span>
-                {!isCollapsed && <span>Sign Out</span>}
+                {showFullNav && <span>Sign Out</span>}
               </button>
             </div>
           ) : (
             <div className="sidebar-auth-card">
-              {!isCollapsed && <p className="auth-prompt">Access candidate & employer features</p>}
+              {showFullNav && <p className="auth-prompt">Access candidate & employer features</p>}
               <div className="auth-btn-group">
-                <Link to="/login" className="btn btn-outline-sidebar" onClick={closeDrawer} title={isCollapsed ? "Log In" : undefined}>
-                  {isCollapsed ? '🔑' : 'Log In'}
+                <Link to="/login" className="btn btn-outline-sidebar" onClick={closeDrawer} title={!showFullNav ? "Log In" : undefined}>
+                  {!showFullNav ? '🔑' : 'Log In'}
                 </Link>
-                <Link to="/register" className="btn btn-emerald-sidebar" onClick={closeDrawer} title={isCollapsed ? "Register" : undefined}>
-                  {isCollapsed ? '✨' : 'Register →'}
+                <Link to="/register" className="btn btn-emerald-sidebar" onClick={closeDrawer} title={!showFullNav ? "Register" : undefined}>
+                  {!showFullNav ? '✨' : 'Register →'}
                 </Link>
               </div>
             </div>

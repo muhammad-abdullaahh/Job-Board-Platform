@@ -27,24 +27,26 @@ export const CompanyDetailPage = () => {
   return (
     <div className="page-container company-detail-page">
       <div style={{ background: 'var(--surface-card)', padding: 'clamp(1.25rem, 3.5vw, 2.5rem)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-md)', marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.25rem', color: 'var(--primary)' }}>{company.name}</h1>
-            {company.location && <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>📍 {company.location}</p>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.85rem', marginBottom: '1rem' }}>
+          <div style={{ flex: 1, minWidth: 'min(100%, 240px)' }}>
+            <h1 style={{ fontSize: 'clamp(1.6rem, 4.5vw, 2.25rem)', marginBottom: '0.25rem', color: 'var(--primary)', wordBreak: 'break-word' }}>{company.name}</h1>
+            {company.location && <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>📍 {company.location}</p>}
           </div>
-          {company.is_verified ? (
-            <span className="badge status-accepted" style={{ fontSize: '0.9rem', padding: '0.4rem 0.85rem' }}>
-              ✓ Verified Employer
-            </span>
-          ) : (
-            <span className="badge status-applied" style={{ fontSize: '0.9rem', padding: '0.4rem 0.85rem' }}>
-              ⏳ Pending Verification
-            </span>
-          )}
+          <div style={{ flexShrink: 0 }}>
+            {company.is_verified ? (
+              <span className="badge status-accepted" style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}>
+                ✓ Verified Employer
+              </span>
+            ) : (
+              <span className="badge status-applied" style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}>
+                ⏳ Pending Verification
+              </span>
+            )}
+          </div>
         </div>
 
         {company.website && (
-          <p style={{ marginBottom: '1.25rem' }}>
+          <p style={{ marginBottom: '1.25rem', wordBreak: 'break-all', fontSize: '0.95rem' }}>
             🌐 Website: <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-hover)', fontWeight: 600 }}>{company.website}</a>
           </p>
         )}

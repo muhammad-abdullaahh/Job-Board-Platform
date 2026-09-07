@@ -24,11 +24,11 @@ export const JobCard = ({ job, onApply }) => {
   return (
     <div className="job-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.65rem' }}>
-          <h3 className="job-title" style={{ fontSize: '1.25rem', color: '#FFFFFF', margin: 0, fontWeight: 700 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.65rem', flexWrap: 'wrap' }}>
+          <h3 className="job-title" style={{ fontSize: '1.2rem', color: '#FFFFFF', margin: 0, fontWeight: 700, flex: 1, minWidth: '160px', wordBreak: 'break-word' }}>
             {job.title || 'Untitled Position'}
           </h3>
-          <span className="badge badge-primary" style={{ fontSize: '0.75rem', fontWeight: 600 }}>{empType}</span>
+          <span className="badge badge-primary" style={{ fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>{empType}</span>
         </div>
 
         <p className="job-company" style={{ marginBottom: '0.85rem' }}>
@@ -42,8 +42,8 @@ export const JobCard = ({ job, onApply }) => {
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
-          <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>📍 {job.location || 'Remote'}</span>
-          {formattedSalary && <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>💰 {formattedSalary}</span>}
+          <span className="badge badge-accent" style={{ fontSize: '0.75rem', flexShrink: 0 }}>📍 {job.location || 'Remote'}</span>
+          {formattedSalary && <span className="badge badge-primary" style={{ fontSize: '0.75rem', flexShrink: 0 }}>💰 {formattedSalary}</span>}
         </div>
         
         {job.skills && job.skills.length > 0 && (
@@ -61,9 +61,9 @@ export const JobCard = ({ job, onApply }) => {
         </p>
       </div>
 
-      <div className="card-actions" style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
-        <Link to={`/jobs/${job.job_id || job.id}`} className="btn btn-outline" style={{ flex: 1, textAlign: 'center' }}>Details</Link>
-        <button onClick={handleApplyClick} className="btn btn-emerald" style={{ flex: 1, textAlign: 'center' }}>
+      <div className="card-actions" style={{ display: 'flex', gap: '0.65rem', marginTop: 'auto' }}>
+        <Link to={`/jobs/${job.job_id || job.id}`} className="btn btn-outline" style={{ flex: 1, textAlign: 'center', minHeight: '40px' }}>Details</Link>
+        <button onClick={handleApplyClick} className="btn btn-emerald" style={{ flex: 1, textAlign: 'center', minHeight: '40px' }}>
           Apply &rarr;
         </button>
       </div>

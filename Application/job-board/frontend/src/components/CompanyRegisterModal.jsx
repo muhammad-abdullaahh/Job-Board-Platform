@@ -55,12 +55,36 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content" style={{ maxWidth: '600px' }}>
-        <h2 style={{ marginBottom: '0.35rem', color: 'var(--primary)' }}>Register Organization Profile</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-          Provide company identity and verification details. An Administrator will review these audit details before approving your employer posting account.
-        </p>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0, color: 'var(--primary)' }}>Register Organization Profile</h2>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.2rem', fontSize: '0.875rem' }}>
+              Provide company identity and verification details.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '1.4rem',
+              cursor: 'pointer',
+              minWidth: '40px',
+              minHeight: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              padding: 0
+            }}
+          >
+            ✕
+          </button>
+        </div>
 
         {error && <div className="error-banner">{error}</div>}
 
