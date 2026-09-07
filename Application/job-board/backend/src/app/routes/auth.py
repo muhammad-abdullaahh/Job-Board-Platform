@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status, Response, Cookie, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.auth_service import AuthService
+from app.services.email_service import email_service
 from app.config import settings
 from app.schemas.auth_schema import (
     LoginRequest,
@@ -71,8 +72,13 @@ def logout(response: Response):
 def forgot_password(request_in: ForgotPasswordRequest, db: Session = Depends(get_db)):
     service = AuthService(db)
     token = service.request_password_reset(request_in.email)
+    delivery = email_service.send_password_reset_email(to_email=request_in.email, token=token)
     return {
-        "message": f"If the email is registered, a password reset link has been dispatched. Token: {token}"
+        "status": "success",
+        "message": delivery["message"],
+        "email_sent": delivery["sent"],
+        "reset_link": delivery.get("reset_link"),
+        "token": token
     }
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)

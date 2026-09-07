@@ -20,6 +20,17 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
 
+    # SMTP & Email Delivery Settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@job-board.com"
+    SMTP_FROM_NAME: str = "Job-Board Platform"
+    SMTP_TLS: bool = True
+    SMTP_SSL: bool = False
+    FRONTEND_URL: str = "http://localhost:5173"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: str) -> str:
