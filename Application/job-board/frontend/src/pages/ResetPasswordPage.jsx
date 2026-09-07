@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { resetPasswordApi } from '../api/authApi';
 
 export const ResetPasswordPage = () => {
@@ -29,6 +29,11 @@ export const ResetPasswordPage = () => {
 
   return (
     <div className="auth-page">
+      <div className="auth-brand-header">
+        <Link to="/" title="Job-Board">
+          <img src="/Job-Board-Logo.jpg" alt="Job-Board Logo" className="auth-logo-img" />
+        </Link>
+      </div>
       <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Reset Password</h2>
       <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem' }}>
         Choose a secure new password for your account

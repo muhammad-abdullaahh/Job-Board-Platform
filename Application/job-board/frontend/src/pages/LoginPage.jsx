@@ -27,6 +27,11 @@ export const LoginPage = () => {
 
   return (
     <div className="auth-page">
+      <div className="auth-brand-header">
+        <Link to="/" title="Job-Board">
+          <img src="/Job-Board-Logo.jpg" alt="Job-Board Logo" className="auth-logo-img" />
+        </Link>
+      </div>
       <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Welcome Back</h2>
       <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.75rem', fontSize: '0.95rem' }}>
         Log in to access your dashboard & opportunities

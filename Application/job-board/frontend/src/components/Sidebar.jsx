@@ -34,9 +34,9 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
     <>
       {/* Mobile Top Header Bar */}
       <header className="mobile-header">
-        <Link to="/" className="sidebar-logo" onClick={closeDrawer}>
-          <div className="logo-icon">CH</div>
-          <span className="logo-text">Career<span>Hub</span></span>
+        <Link to="/" className="sidebar-logo" onClick={closeDrawer} title="Job-Board">
+          <img src="/logo-icon.png" alt="Job-Board Logo" className="logo-icon-img" />
+          <span className="logo-text">Job-<span>Board</span></span>
         </Link>
         <button
           className="mobile-toggle-btn"
@@ -55,9 +55,9 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
       <aside className={`sidebar ${isCollapsed && !isOpen ? 'collapsed' : ''} ${isOpen ? 'mobile-open' : ''}`}>
         {/* Brand Header */}
         <div className="sidebar-header">
-          <Link to="/" className="sidebar-logo" onClick={closeDrawer} title="CareerHub">
-            <div className="logo-icon">CH</div>
-            {showFullNav && <span className="logo-text">Career<span>Hub</span></span>}
+          <Link to="/" className="sidebar-logo" onClick={closeDrawer} title="Job-Board">
+            <img src="/logo-icon.png" alt="Job-Board Logo" className="logo-icon-img" />
+            {showFullNav && <span className="logo-text">Job-<span>Board</span></span>}
           </Link>
 
           {/* Mobile Drawer Close Button */}

@@ -20,9 +20,10 @@ export const HomePage = () => {
     <div className="page-container home-page">
       {/* Hero Banner Section */}
       <section className="hero-section">
-        <span className="badge badge-primary" style={{ marginBottom: '1.25rem', fontSize: '0.85rem' }}>
-          ✨ NEXT-GEN CAREER PLATFORM
-        </span>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem', padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-pill)', background: 'var(--surface-card)', border: '1px solid var(--border-emerald)' }}>
+          <img src="/logo-icon.png" alt="Job-Board Logo" style={{ width: '22px', height: '22px', borderRadius: '4px', objectFit: 'cover' }} />
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.04em' }}>JOB-BOARD PLATFORM</span>
+        </div>
         <h1>Shape Your Future with Top Industry Leaders</h1>
         <p>
           Connect directly with verified hiring teams, land high-paying roles, and track your application status in real-time.
