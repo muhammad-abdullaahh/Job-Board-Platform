@@ -279,7 +279,7 @@ export const DashboardPage = () => {
     if (!editingSkillName.trim()) return;
     try {
       await updateSkillApi(skillId, editingSkillName.trim());
-      setActionMessage(`Skill #${skillId} updated successfully.`);
+      setActionMessage(`Skill "${editingSkillName.trim()}" updated successfully.`);
       setEditingSkillId(null);
       setEditingSkillName('');
       const updatedSkills = await fetchSkillsApi().catch(() => []);
@@ -512,7 +512,7 @@ export const DashboardPage = () => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                       {profileForm.skill_ids.map((id) => {
                         const skillObj = skillsList.find((s) => s.skill_id === id);
-                        const skillName = skillObj ? skillObj.name : `Skill #${id}`;
+                        const skillName = skillObj ? skillObj.name : 'Selected Skill';
                         return (
                           <span
                             key={id}
@@ -676,7 +676,7 @@ export const DashboardPage = () => {
                                 {selectedJobApps[job.job_id].map((applicantApp) => (
                                   <div key={applicantApp.application_id} style={{ background: 'var(--surface-card)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                                     <div>
-                                      <strong style={{ color: 'var(--text-main)' }}>{applicantApp.applicant?.name || applicantApp.applicant?.email || `Applicant #${applicantApp.user_id}`}</strong>
+                                      <strong style={{ color: 'var(--text-main)' }}>{applicantApp.applicant?.name || applicantApp.applicant?.email || 'Candidate Applicant'}</strong>
                                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0' }}>
                                         {applicantApp.cover_letter}
                                       </p>
@@ -986,7 +986,6 @@ export const DashboardPage = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 1rem' }}>Job ID</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Position Details</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Company</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Compensation</th>
@@ -998,15 +997,12 @@ export const DashboardPage = () => {
                     <tbody>
                       {filteredAdminJobs.map((job) => (
                         <tr key={job.job_id} style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s' }}>
-                          <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            #{job.job_id}
-                          </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{job.title}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>📍 {job.location || 'Remote'} • {job.employment_type?.replace('_', ' ')}</div>
                           </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{job.company?.name || `Company #${job.company_id}`}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{job.company?.name || 'Partner Company'}</span>
                           </td>
                           <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
                             ${(job.salary_min || 0).toLocaleString()} - ${(job.salary_max || 0).toLocaleString()}
@@ -1135,7 +1131,6 @@ export const DashboardPage = () => {
                       <div style={{ flex: 1, minWidth: 'min(100%, 280px)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
                           <h4 style={{ color: 'var(--primary)', fontSize: '1.25rem', margin: 0 }}>{comp.name}</h4>
-                          <span className="badge badge-accent" style={{ fontSize: '0.75rem' }}>ID #{comp.company_id || comp.id}</span>
                           {comp.is_verified ? (
                             <span className="badge" style={{ background: 'rgba(0, 230, 165, 0.15)', color: 'var(--primary)', border: '1px solid var(--border-emerald)' }}>
                               ✓ Verified Organization
@@ -1257,7 +1252,6 @@ export const DashboardPage = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 1rem', width: '100px' }}>Skill ID</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Standard Skill Name</th>
                         <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
                       </tr>
@@ -1265,9 +1259,6 @@ export const DashboardPage = () => {
                     <tbody>
                       {filteredSkills.map((s) => (
                         <tr key={s.skill_id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                          <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            #{s.skill_id}
-                          </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             {editingSkillId === s.skill_id ? (
                               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -1347,7 +1338,7 @@ export const DashboardPage = () => {
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1, maxWidth: '100%', justifyContent: 'flex-end' }}>
                   <input
                     type="text"
-                    placeholder="Search user by name, email or ID..."
+                    placeholder="Search user by name or email..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '1 1 200px', minWidth: '180px' }}
@@ -1373,7 +1364,6 @@ export const DashboardPage = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-                        <th style={{ padding: '0.75rem 1rem' }}>User ID</th>
                         <th style={{ padding: '0.75rem 1rem' }}>User Details</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Role</th>
                         <th style={{ padding: '0.75rem 1rem' }}>Account Status</th>
@@ -1384,9 +1374,6 @@ export const DashboardPage = () => {
                     <tbody>
                       {filteredUsers.map((u) => (
                         <tr key={u.user_id} style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 0.2s', opacity: u.deleted_at ? 0.75 : 1 }}>
-                          <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                            #{u.user_id}
-                          </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{u.name}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.email}</div>

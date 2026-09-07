@@ -75,7 +75,7 @@ export const CompanyEditModal = ({ company, onClose, onSuccess }) => {
           <div>
             <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0, color: 'var(--primary)' }}>Edit Company Profile</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-              Update corporate details for #{company?.company_id || company?.id} {company?.name}
+              Update corporate details for {company?.name}
             </p>
           </div>
           <button
