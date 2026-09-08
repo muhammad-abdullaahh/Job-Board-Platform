@@ -41,6 +41,9 @@ else:
         connect_args=connect_args,
     )
 
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
 from sqlalchemy import text
 
 _db_migrated = False
@@ -64,4 +67,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
