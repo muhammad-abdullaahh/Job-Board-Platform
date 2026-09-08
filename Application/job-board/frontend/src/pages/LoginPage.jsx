@@ -21,7 +21,13 @@ export const LoginPage = () => {
       loginUser(data);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid login credentials.');
+      let msg = 'Invalid login credentials.';
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        msg = 'Unable to connect to the backend server. Please ensure the FastAPI server is running on http://127.0.0.1:8000.';
+      } else if (typeof err.response.data?.detail === 'string') {
+        msg = err.response.data.detail;
+      }
+      setError(msg);
     }
   };
 

@@ -119,7 +119,17 @@ export const RegisterPage = () => {
       loginUser(data);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      let msg = 'Registration failed. Please try again.';
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        msg = 'Unable to connect to the backend server. Please ensure the FastAPI server is running on http://127.0.0.1:8000.';
+      } else if (typeof err.response.data?.detail === 'string') {
+        msg = err.response.data.detail;
+      } else if (Array.isArray(err.response.data?.detail)) {
+        msg = err.response.data.detail.map((d) => d.msg || d.message || JSON.stringify(d)).join(', ');
+      } else if (err.response.status === 504 || err.response.status === 502) {
+        msg = 'Backend server connection timeout. Please verify the backend service is running.';
+      }
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
