@@ -108,9 +108,14 @@ def readiness_check():
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+            conn.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(user_id)"))
+            conn.execute(text("UPDATE companies SET created_by = updated_by WHERE created_by IS NULL AND updated_by IS NOT NULL"))
+            conn.commit()
         return {
             "status": "ready",
-            "database": "connected"
+            "database": "connected",
+            "migrated": True
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database connection failed: {e}")
+
