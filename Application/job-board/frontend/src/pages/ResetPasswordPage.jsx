@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { resetPasswordApi } from '../api/authApi';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -23,7 +24,7 @@ export const ResetPasswordPage = () => {
       setMessage('Password updated successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to reset password.');
+      setError(getErrorMessage(err, 'Failed to reset password. The link may have expired or is invalid.'));
     }
   };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPasswordApi } from '../api/authApi';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -25,7 +26,7 @@ export const ForgotPasswordPage = () => {
         setMessage(res.message || 'Password reset request processed.');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to process request.');
+      setError(getErrorMessage(err, 'Failed to process password reset request. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -83,9 +84,9 @@ export const ForgotPasswordPage = () => {
             <strong style={{ color: 'var(--primary)', fontSize: '0.95rem' }}>Direct Reset Link Ready</strong>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0', lineHeight: 1.5 }}>
-            SMTP email delivery is not yet configured in <code>backend/.env</code>, but your secure reset link was generated. You can proceed directly:
+            Your secure password reset link has been generated. You can proceed directly:
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <a
               href={resetData.reset_link}
               className="btn btn-emerald"
@@ -105,9 +106,6 @@ export const ForgotPasswordPage = () => {
             >
               {copied ? '✓ Copied!' : '📋 Copy Link'}
             </button>
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-light)', paddingTop: '0.5rem', lineHeight: 1.4 }}>
-            💡 To send real emails to your inbox, set <code>SMTP_HOST</code>, <code>SMTP_USER</code>, and <code>SMTP_PASSWORD</code> in <code>Application/job-board/backend/.env</code>.
           </div>
         </div>
       )}

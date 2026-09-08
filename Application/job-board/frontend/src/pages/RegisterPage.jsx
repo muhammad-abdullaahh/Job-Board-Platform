@@ -4,6 +4,7 @@ import { Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { registerApi } from '../api/authApi';
 import { useAuth } from '../auth/useAuth';
 import { TermsModal } from '../components/TermsModal';
+import { getErrorMessage } from '../errors/errorMessages';
 
 const calculatePasswordStrength = (pass) => {
   const checks = {
@@ -119,17 +120,7 @@ export const RegisterPage = () => {
       loginUser(data);
       navigate('/dashboard');
     } catch (err) {
-      let msg = 'Registration failed. Please try again.';
-      if (!err.response || err.code === 'ERR_NETWORK') {
-        msg = 'Unable to connect to the backend server. Please ensure the FastAPI server is running on http://127.0.0.1:8000.';
-      } else if (typeof err.response.data?.detail === 'string') {
-        msg = err.response.data.detail;
-      } else if (Array.isArray(err.response.data?.detail)) {
-        msg = err.response.data.detail.map((d) => d.msg || d.message || JSON.stringify(d)).join(', ');
-      } else if (err.response.status === 504 || err.response.status === 502) {
-        msg = 'Backend server connection timeout. Please verify the backend service is running.';
-      }
-      setError(msg);
+      setError(getErrorMessage(err, 'Registration failed. Please check your details and try again.'));
     } finally {
       setIsSubmitting(false);
     }

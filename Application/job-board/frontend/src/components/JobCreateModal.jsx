@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createJobApi, updateJobApi } from '../api/jobsApi';
 import { fetchSkillsApi } from '../api/skillsApi';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const JobCreateModal = ({ companyId, jobToEdit = null, onClose, onSuccess }) => {
   const [title, setTitle] = useState(jobToEdit?.title || '');
@@ -59,7 +60,7 @@ export const JobCreateModal = ({ companyId, jobToEdit = null, onClose, onSuccess
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.detail || (jobToEdit ? 'Failed to update job posting.' : 'Failed to create job posting.'));
+      setError(getErrorMessage(err, jobToEdit ? 'Failed to update job posting.' : 'Failed to create job posting.'));
       setLoading(false);
     }
   };

@@ -45,11 +45,21 @@ class UserService:
         return self.user_repo.update_user(user, user_in)
 
     def delete_user(self, user_id: int, deleted_by_user_id: Optional[int] = None) -> User:
-        user = self.get_user_profile(user_id, include_deleted=False)
+        user = self.get_user_profile(user_id, include_deleted=True)
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User #{user_id} is already suspended."
+            )
         return self.user_repo.soft_delete_user(user, deleted_by_user_id=deleted_by_user_id)
 
     def restore_user(self, user_id: int) -> User:
         user = self.get_user_profile(user_id, include_deleted=True)
+        if user.deleted_at is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User #{user_id} is already active and not suspended."
+            )
         return self.user_repo.restore_user(user)
 
     def update_user_role(self, user_id: int, is_admin: bool) -> User:

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchCompaniesWithCache, fetchCompaniesApi } from '../api/companiesApi';
 import { useAuth } from '../auth/useAuth';
 import { SkeletonCompanyGrid } from '../components/SkeletonCompanyCard';
+import { getErrorMessage } from '../errors/errorMessages';
 
 const GUEST_COMPANY_LIMIT = 4;
 
@@ -26,7 +27,7 @@ export const CompaniesPage = () => {
         },
         onError: (err) => {
           console.error('Failed to load companies:', err);
-          setError('Unable to load company directory right now. The server or database may be connecting.');
+          setError(getErrorMessage(err, 'Unable to load company directory right now. Please check your connection or try again shortly.'));
           setLoading(false);
         }
       });

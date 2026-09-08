@@ -4,6 +4,7 @@ import { fetchJobsWithCache, fetchJobsApi } from '../api/jobsApi';
 import { useAuth } from '../auth/useAuth';
 import { JobCard } from '../components/JobCard';
 import { SkeletonJobGrid } from '../components/SkeletonJobCard';
+import { getErrorMessage } from '../errors/errorMessages';
 
 const GUEST_JOB_LIMIT = 3;
 
@@ -79,7 +80,7 @@ export const JobListingsPage = () => {
         },
         onError: (err) => {
           console.error('Failed to load jobs:', err);
-          setError('Unable to load job listings right now. The database may be warming up or temporarily unreachable.');
+          setError(getErrorMessage(err, 'Unable to load job listings right now. Please check your connection or try again shortly.'));
           setLoading(false);
         }
       });

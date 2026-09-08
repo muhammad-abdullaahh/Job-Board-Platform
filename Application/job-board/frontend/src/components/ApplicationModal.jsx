@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Link } from 'react-router-dom';
 import { applyForJobApi } from '../api/applicationsApi';
 import { useAuth } from '../auth/useAuth';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const ApplicationModal = ({ job, onClose, onSuccess }) => {
   const { isAuthenticated } = useAuth();
@@ -32,8 +33,7 @@ export const ApplicationModal = ({ job, onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Failed to submit application.');
+      setError(getErrorMessage(err, 'Failed to submit application. Please try again.'));
       setLoading(false);
     }
   };

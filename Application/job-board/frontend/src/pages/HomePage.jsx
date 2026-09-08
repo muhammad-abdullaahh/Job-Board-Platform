@@ -7,6 +7,7 @@ import { JobCard } from '../components/JobCard';
 import { SkeletonJobGrid } from '../components/SkeletonJobCard';
 import { SkeletonCompanyGrid } from '../components/SkeletonCompanyCard';
 import { TestimonialsSection } from '../components/TestimonialsSection';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -29,7 +30,7 @@ export const HomePage = () => {
         },
         onError: (err) => {
           console.error('Failed to load featured jobs:', err);
-          setError('Unable to load jobs at this time. The server or database may be connecting.');
+          setError(getErrorMessage(err, 'Unable to load featured jobs at this time. Please check your connection or try again shortly.'));
           setLoading(false);
         }
       });

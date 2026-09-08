@@ -4,6 +4,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { loginApi } from '../api/authApi';
 import { useAuth } from '../auth/useAuth';
 
+import { getErrorMessage } from '../errors/errorMessages';
+
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,13 +23,7 @@ export const LoginPage = () => {
       loginUser(data);
       navigate('/dashboard');
     } catch (err) {
-      let msg = 'Invalid login credentials.';
-      if (!err.response || err.code === 'ERR_NETWORK') {
-        msg = 'Unable to connect to the backend server. Please ensure the FastAPI server is running on http://127.0.0.1:8000.';
-      } else if (typeof err.response.data?.detail === 'string') {
-        msg = err.response.data.detail;
-      }
-      setError(msg);
+      setError(getErrorMessage(err, 'Invalid login credentials.'));
     }
   };
 

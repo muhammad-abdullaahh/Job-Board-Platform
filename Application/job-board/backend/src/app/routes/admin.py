@@ -23,6 +23,7 @@ def get_admin_analytics(
     total_users = db.query(func.count(User.user_id)).filter(User.deleted_at.is_(None)).scalar() or 0
     admin_users = db.query(func.count(User.user_id)).filter(User.deleted_at.is_(None), User.is_admin == True).scalar() or 0
     standard_users = total_users - admin_users
+    suspended_users = db.query(func.count(User.user_id)).filter(User.deleted_at.is_not(None)).scalar() or 0
 
     # Companies metrics
     total_companies = db.query(func.count(Company.company_id)).filter(Company.deleted_at.is_(None)).scalar() or 0
@@ -73,6 +74,7 @@ def get_admin_analytics(
             "total": total_users,
             "admins": admin_users,
             "candidates": standard_users,
+            "suspended": suspended_users,
         },
         "companies": {
             "total": total_companies,

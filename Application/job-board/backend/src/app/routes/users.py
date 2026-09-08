@@ -53,9 +53,16 @@ def soft_delete_user(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
+    if user_id == admin.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot suspend your own administrator account."
+        )
     service = UserService(db)
     service.delete_user(user_id, deleted_by_user_id=admin.user_id)
-    return {"message": f"User #{user_id} soft-deleted successfully."}
+    api_cache.clear_prefix("jobs:")
+    api_cache.clear_prefix("companies:")
+    return {"message": f"User #{user_id} suspended successfully."}
 
 @router.post("/{user_id}/restore", response_model=UserResponse)
 def restore_user(
@@ -64,7 +71,10 @@ def restore_user(
     admin: User = Depends(require_admin)
 ):
     service = UserService(db)
-    return service.restore_user(user_id)
+    restored = service.restore_user(user_id)
+    api_cache.clear_prefix("jobs:")
+    api_cache.clear_prefix("companies:")
+    return restored
 
 @router.get("/skills", response_model=List[SkillResponse], tags=["Skills"])
 def get_all_skills(db: Session = Depends(get_db)):

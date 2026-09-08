@@ -18,8 +18,13 @@ class AuthService:
         self.user_repo = UserRepository(db)
 
     def register_user(self, user_in) -> Token:
-        existing_user = self.user_repo.get_user_by_email(user_in.email)
+        existing_user = self.user_repo.get_user_by_email(user_in.email, include_deleted=True)
         if existing_user:
+            if existing_user.deleted_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"An account with email '{user_in.email}' is currently suspended. Please contact support."
+                )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Email '{user_in.email}' is already registered."
@@ -44,11 +49,17 @@ class AuthService:
         )
 
     def login(self, login_in) -> Token:
-        user = self.user_repo.get_user_by_email(login_in.email)
+        user = self.user_repo.get_user_by_email(login_in.email, include_deleted=True)
         if not user or not verify_password(login_in.password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password."
+            )
+
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account has been suspended by an administrator. Please contact support."
             )
 
         role = "admin" if user.is_admin else "user"
@@ -89,11 +100,16 @@ class AuthService:
                 detail="Invalid refresh token payload."
             )
             
-        user = self.user_repo.get_user_by_id(int(user_id_str))
+        user = self.user_repo.get_user_by_id(int(user_id_str), include_deleted=True)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User associated with token no longer exists."
+            )
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Your account has been suspended by an administrator."
             )
 
         role = "admin" if user.is_admin else "user"
@@ -115,9 +131,14 @@ class AuthService:
 
     def request_password_reset(self, email: str) -> Optional[str]:
         clean_email = email.strip().lower()
-        user = self.user_repo.get_user_by_email(clean_email)
+        user = self.user_repo.get_user_by_email(clean_email, include_deleted=True)
         if not user:
             return None
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This account has been suspended by an administrator. Password reset is not permitted."
+            )
         return create_password_reset_token(clean_email)
 
     def reset_password(self, token: str, new_password: str):

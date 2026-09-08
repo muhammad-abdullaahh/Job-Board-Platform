@@ -28,6 +28,7 @@ import { OfferTimerBadge } from '../components/OfferTimerBadge';
 import { CompanyRegisterModal } from '../components/CompanyRegisterModal';
 import { CompanyEditModal } from '../components/CompanyEditModal';
 import { JobCreateModal } from '../components/JobCreateModal';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const DashboardPage = () => {
   const { user, setUser } = useAuth();
@@ -147,7 +148,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to verify company.');
+      alert(getErrorMessage(err, 'Failed to verify company.'));
     }
   };
 
@@ -159,7 +160,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete job.');
+      alert(getErrorMessage(err, 'Failed to delete job.'));
     }
   };
 
@@ -192,7 +193,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 4000);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update status.');
+      alert(getErrorMessage(err, 'Failed to update status.'));
     }
   };
 
@@ -203,7 +204,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update user role.');
+      alert(getErrorMessage(err, 'Failed to update user role.'));
     }
   };
 
@@ -212,10 +213,13 @@ export const DashboardPage = () => {
     try {
       await deleteUserApi(targetUserId);
       setActionMessage(`User #${targetUserId} suspended successfully.`);
+      setUsersList((prev) =>
+        prev.map((u) => (u.user_id === targetUserId ? { ...u, deleted_at: new Date().toISOString() } : u))
+      );
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to suspend user.');
+      alert(getErrorMessage(err, 'Failed to suspend user.'));
     }
   };
 
@@ -223,10 +227,13 @@ export const DashboardPage = () => {
     try {
       await restoreUserApi(targetUserId);
       setActionMessage(`User #${targetUserId} (${userName || ''}) reactivated successfully.`);
+      setUsersList((prev) =>
+        prev.map((u) => (u.user_id === targetUserId ? { ...u, deleted_at: null } : u))
+      );
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to reactivate user.');
+      alert(getErrorMessage(err, 'Failed to reactivate user.'));
     }
   };
 
@@ -237,7 +244,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update job status.');
+      alert(getErrorMessage(err, 'Failed to update job status.'));
     }
   };
 
@@ -249,7 +256,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete job.');
+      alert(getErrorMessage(err, 'Failed to delete job.'));
     }
   };
 
@@ -260,7 +267,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update company verification.');
+      alert(getErrorMessage(err, 'Failed to update company verification.'));
     }
   };
 
@@ -272,7 +279,7 @@ export const DashboardPage = () => {
       loadDashboardData();
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete company.');
+      alert(getErrorMessage(err, 'Failed to delete company.'));
     }
   };
 
@@ -287,7 +294,7 @@ export const DashboardPage = () => {
       setSkillsList(updatedSkills || []);
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to create skill.');
+      alert(getErrorMessage(err, 'Failed to create skill.'));
     }
   };
 
@@ -302,7 +309,7 @@ export const DashboardPage = () => {
       setSkillsList(updatedSkills || []);
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to update skill.');
+      alert(getErrorMessage(err, 'Failed to update skill.'));
     }
   };
 
@@ -315,7 +322,7 @@ export const DashboardPage = () => {
       setSkillsList(updatedSkills || []);
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to delete skill.');
+      alert(getErrorMessage(err, 'Failed to delete skill.'));
     }
   };
 
@@ -348,7 +355,7 @@ export const DashboardPage = () => {
       setActionMessage('✅ Profile and skills saved successfully!');
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to save profile.');
+      alert(getErrorMessage(err, 'Failed to save profile.'));
     } finally {
       setProfileSaving(false);
     }
@@ -847,6 +854,7 @@ export const DashboardPage = () => {
                   </div>
                   <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
                     👑 {analytics.users.admins} Admins • 👤 {analytics.users.candidates} Candidates
+                    {analytics.users.suspended > 0 && ` • 🔴 ${analytics.users.suspended} Suspended`}
                   </div>
                 </div>
 
@@ -1364,13 +1372,23 @@ export const DashboardPage = () => {
           {adminTab === 'users' && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <h3 style={{ fontSize: '1.35rem', color: '#F8FAFC', margin: 0 }}>
                     👥 User Governance & Role Management
                   </h3>
-                  <span className="badge badge-accent" style={{ fontSize: '0.8rem' }}>
-                    {usersList.length} Registered Users
-                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span className="badge badge-accent" style={{ fontSize: '0.8rem' }}>
+                      {usersList.length} Total Users
+                    </span>
+                    <span className="badge" style={{ background: 'rgba(0, 230, 165, 0.12)', color: 'var(--primary)', border: '1px solid var(--border-emerald)', fontSize: '0.75rem' }}>
+                      🟢 {usersList.filter(u => !u.deleted_at).length} Active
+                    </span>
+                    {usersList.some(u => !!u.deleted_at) && (
+                      <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '0.75rem' }}>
+                        🔴 {usersList.filter(u => !!u.deleted_at).length} Suspended
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Controls: Search and Filter */}
@@ -1387,11 +1405,11 @@ export const DashboardPage = () => {
                     onChange={(e) => setUserRoleFilter(e.target.value)}
                     style={{ padding: '0.5rem 0.85rem', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', color: '#FFF', border: '1px solid var(--border-light)', flex: '0 1 180px', width: 'auto' }}
                   >
-                    <option value="all">All Users</option>
-                    <option value="active">Active Accounts Only</option>
-                    <option value="suspended">Suspended Accounts Only</option>
-                    <option value="admin">Admins Only</option>
-                    <option value="regular">Standard Users Only</option>
+                    <option value="all">All Users ({usersList.length})</option>
+                    <option value="active">Active Accounts ({usersList.filter(u => !u.deleted_at).length})</option>
+                    <option value="suspended">Suspended Accounts ({usersList.filter(u => !!u.deleted_at).length})</option>
+                    <option value="admin">Admins Only ({usersList.filter(u => u.is_admin).length})</option>
+                    <option value="regular">Standard Users ({usersList.filter(u => !u.is_admin).length})</option>
                   </select>
                 </div>
               </div>
@@ -1458,6 +1476,7 @@ export const DashboardPage = () => {
                                   onClick={() => handleRestoreUser(u.user_id, u.name)}
                                   className="btn btn-outline"
                                   style={{ padding: '0.35rem 0.75rem', fontSize: '0.775rem', borderColor: 'var(--border-emerald)', color: 'var(--primary)' }}
+                                  title="Reactivate user account and restore platform access"
                                 >
                                   Reactivate
                                 </button>
@@ -1467,7 +1486,7 @@ export const DashboardPage = () => {
                                   disabled={u.user_id === user?.user_id}
                                   className="btn btn-outline"
                                   style={{ padding: '0.35rem 0.75rem', fontSize: '0.775rem', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#EF4444', opacity: u.user_id === user?.user_id ? 0.4 : 1 }}
-                                  title={u.user_id === user?.user_id ? "You cannot delete your own account" : ""}
+                                  title={u.user_id === user?.user_id ? "You cannot suspend your own administrator account" : "Suspend user account and associated listings"}
                                 >
                                   Suspend
                                 </button>

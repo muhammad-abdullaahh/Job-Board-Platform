@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, Request
@@ -11,6 +12,8 @@ from fastapi.exceptions import RequestValidationError
 from app.scheduler import start_scheduler
 from app.core.error_handlers import http_exception_handler, generic_exception_handler, validation_exception_handler
 import app.models  # Ensure all models are loaded
+
+logger = logging.getLogger("app.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -118,5 +121,6 @@ def readiness_check():
             "migrated": True
         }
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Database connection failed: {e}")
+        logger.error(f"Readiness check database connection failed: {e}")
+        raise HTTPException(status_code=503, detail="Database service is temporarily unavailable. Please try again later.")
 

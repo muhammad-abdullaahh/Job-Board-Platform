@@ -44,11 +44,16 @@ def get_current_user(
 
     repo = UserRepository(db)
     user_id = int(user_id_str)
-    user = repo.get_user_by_id(user_id)
+    user = repo.get_user_by_id(user_id, include_deleted=True)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User account not found or deleted.",
+            detail="User account not found.",
+        )
+    if user.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your account has been suspended by an administrator.",
         )
 
     return user

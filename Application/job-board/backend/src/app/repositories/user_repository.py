@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from app.models.user import User
 from app.models.company import Company
 from app.models.job import Job
@@ -12,15 +12,11 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_user_by_email(self, email: str) -> Optional[User]:
-        return (
-            self.db.query(User)
-            .filter(
-                User.email == email,
-                User.deleted_at.is_(None)
-            )
-            .first()
-        )
+    def get_user_by_email(self, email: str, include_deleted: bool = False) -> Optional[User]:
+        query = self.db.query(User).filter(User.email == email)
+        if not include_deleted:
+            query = query.filter(User.deleted_at.is_(None))
+        return query.first()
 
     def get_user_by_id(self, user_id: int, include_deleted: bool = False) -> Optional[User]:
         q = self.db.query(User).filter(User.user_id == user_id)
@@ -99,8 +95,12 @@ class UserRepository:
         now = datetime.now(timezone.utc)
         try:
             user.deleted_at = now
+            valid_deleted_by = None
             if deleted_by_user_id:
-                user.deleted_by = deleted_by_user_id
+                deleter_exists = self.db.query(User.user_id).filter(User.user_id == deleted_by_user_id).first()
+                if deleter_exists:
+                    valid_deleted_by = deleted_by_user_id
+            user.deleted_by = valid_deleted_by
 
             # Cascade soft-delete respectively to associated entities:
             # 1. Applications submitted by this user
@@ -121,8 +121,7 @@ class UserRepository:
 
             for company in owned_companies:
                 company.deleted_at = now
-                if deleted_by_user_id:
-                    company.deleted_by = deleted_by_user_id
+                company.deleted_by = valid_deleted_by
 
             # 3. Jobs created by this user OR attached to user's companies
             job_filters = [Job.created_by == user.user_id]
@@ -137,8 +136,7 @@ class UserRepository:
 
             for job in owned_jobs:
                 job.deleted_at = now
-                if deleted_by_user_id:
-                    job.deleted_by = deleted_by_user_id
+                job.deleted_by = valid_deleted_by
 
             # 4. Applications for jobs owned by this user
             if job_ids:

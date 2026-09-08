@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createCompanyApi } from '../api/companiesApi';
+import { getErrorMessage } from '../errors/errorMessages';
 
 export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
   const [name, setName] = useState('');
@@ -20,14 +21,6 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
     return `https://${trimmed}`;
   };
 
-  const getErrorMessage = (err) => {
-    const detail = err.response?.data?.detail;
-    if (!detail) return 'Failed to register company. Please try again.';
-    if (typeof detail === 'string') return detail;
-    if (Array.isArray(detail)) return detail.map((d) => d.msg || d.detail || JSON.stringify(d)).join(', ');
-    if (typeof detail === 'object') return detail.msg || detail.detail || JSON.stringify(detail);
-    return String(detail);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,7 +42,7 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       console.error('Company registration error:', err);
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err, 'Failed to register organization profile. Please verify your details.'));
       setLoading(false);
     }
   };
