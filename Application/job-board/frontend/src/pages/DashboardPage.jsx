@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { fetchMyApplicationsApi, fetchJobApplicationsApi, updateApplicationStatusApi } from '../api/applicationsApi';
 import { fetchUserProfileApi, updateUserProfileApi } from '../api/usersApi';
@@ -28,10 +28,13 @@ import { OfferTimerBadge } from '../components/OfferTimerBadge';
 import { CompanyRegisterModal } from '../components/CompanyRegisterModal';
 import { CompanyEditModal } from '../components/CompanyEditModal';
 import { JobCreateModal } from '../components/JobCreateModal';
+import { DeleteAccountModal } from '../components/DeleteAccountModal';
 import { getErrorMessage } from '../errors/errorMessages';
 
 export const DashboardPage = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logoutUser } = useAuth();
+  const navigate = useNavigate();
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [applications, setApplications] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [myCompany, setMyCompany] = useState(null);
@@ -361,6 +364,13 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleAccountDeleted = async () => {
+    setShowDeleteAccountModal(false);
+    await logoutUser();
+    navigate('/', { replace: true });
+    alert('Your account has been deleted successfully.');
+  };
+
   const isAdmin = user?.role === 'admin' || user?.is_admin;
 
   const filteredUsers = usersList.filter((u) => {
@@ -616,6 +626,57 @@ export const DashboardPage = () => {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Account Deletion / Danger Zone */}
+        <div
+          style={{
+            marginTop: '1.25rem',
+            background: 'rgba(239, 68, 68, 0.04)',
+            border: '1px solid rgba(239, 68, 68, 0.2)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.25rem 1.75rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}
+        >
+          <div>
+            <h4 style={{ margin: '0 0 0.25rem 0', color: '#EF4444', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>⚠️</span> Account Deletion & Deactivation
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Permanently deactivate your user profile, cascade-delete candidate applications, and revoke system access. Requires password confirmation.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeleteAccountModal(true)}
+            style={{
+              background: 'transparent',
+              border: '1px solid #EF4444',
+              color: '#EF4444',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.55rem 1.15rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            🗑️ Delete Account
+          </button>
         </div>
       </section>
 
@@ -1601,6 +1662,12 @@ export const DashboardPage = () => {
           }}
         />
       )}
+
+      <DeleteAccountModal
+        isOpen={showDeleteAccountModal}
+        onClose={() => setShowDeleteAccountModal(false)}
+        onAccountDeleted={handleAccountDeleted}
+      />
     </div>
   );
 };

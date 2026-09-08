@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
 from app.models.user import User
 from app.models.skill import Skill
+from app.core.security import verify_password
 
 class UserService:
     def __init__(self, db: Session):
@@ -43,6 +44,24 @@ class UserService:
             user.skills = skills
 
         return self.user_repo.update_user(user, user_in)
+
+    def delete_own_account(self, current_user: User, password: str) -> User:
+        if not password or not verify_password(password, current_user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect password. Account deletion was not performed."
+            )
+        if current_user.is_admin:
+            active_admins = self.db.query(User).filter(
+                User.is_admin == True,
+                User.deleted_at.is_(None)
+            ).count()
+            if active_admins <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot delete the only active administrator account."
+                )
+        return self.user_repo.soft_delete_user(current_user, deleted_by_user_id=current_user.user_id)
 
     def delete_user(self, user_id: int, deleted_by_user_id: Optional[int] = None) -> User:
         user = self.get_user_profile(user_id, include_deleted=True)

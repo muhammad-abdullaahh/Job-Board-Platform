@@ -21,6 +21,9 @@ class UserUpdate(BaseModel):
 class AdminRoleUpdate(BaseModel):
     is_admin: bool
 
+class DeleteAccountRequest(BaseModel):
+    password: str
+
 class UserResponse(BaseModel):
     user_id: int
     name: str

@@ -7,7 +7,14 @@ from app.dependencies.roles import require_admin
 from app.models.user import User
 from app.services.user_service import UserService
 from app.repositories.skill_repository import SkillRepository
-from app.schemas.user_schema import UserResponse, UserUpdate, AdminRoleUpdate, SkillResponse, SkillCreate
+from app.schemas.user_schema import (
+    UserResponse,
+    UserUpdate,
+    AdminRoleUpdate,
+    SkillResponse,
+    SkillCreate,
+    DeleteAccountRequest
+)
 from app.utils.cache import api_cache
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -24,6 +31,32 @@ def update_user_profile(
 ):
     service = UserService(db)
     return service.update_user_profile(current_user, user_in)
+
+@router.delete("/me", status_code=status.HTTP_200_OK)
+def delete_own_account(
+    delete_in: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = UserService(db)
+    service.delete_own_account(current_user, delete_in.password)
+    return {
+        "status": "success",
+        "message": "Your account has been deleted successfully."
+    }
+
+@router.post("/me/delete", status_code=status.HTTP_200_OK)
+def delete_own_account_post_alias(
+    delete_in: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = UserService(db)
+    service.delete_own_account(current_user, delete_in.password)
+    return {
+        "status": "success",
+        "message": "Your account has been deleted successfully."
+    }
 
 @router.get("", response_model=List[UserResponse])
 def get_all_users(
