@@ -63,20 +63,49 @@ export const HomePage = () => {
           Connect directly with verified hiring teams, land high-paying roles, and track your application status in real-time.
         </p>
         <div className="hero-cta-group">
-          <Link
-            to="/jobs"
-            className="btn btn-emerald"
-            onMouseEnter={() => fetchJobsWithCache().catch(() => {})}
-          >
-            🚀 Explore Open Roles &rarr;
-          </Link>
-          <Link
-            to="/companies"
-            className="btn btn-outline"
-            onMouseEnter={() => fetchCompaniesWithCache().catch(() => {})}
-          >
-            🏢 View Employers
-          </Link>
+          {!isAuthenticated ? (
+            <>
+              <Link
+                to="/register"
+                className="btn btn-emerald"
+                style={{ padding: '0.85rem 1.65rem', fontSize: '0.975rem', fontWeight: 700 }}
+              >
+                ✨ Register Free &rarr;
+              </Link>
+              <Link
+                to="/login"
+                className="btn btn-outline"
+                style={{ padding: '0.85rem 1.45rem', fontSize: '0.975rem' }}
+              >
+                🔑 Log In
+              </Link>
+              <Link
+                to="/jobs"
+                className="btn btn-outline"
+                style={{ padding: '0.85rem 1.45rem', fontSize: '0.975rem', background: 'rgba(255, 255, 255, 0.03)' }}
+                onMouseEnter={() => fetchJobsWithCache().catch(() => {})}
+              >
+                💼 Explore Jobs
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/jobs"
+                className="btn btn-emerald"
+                onMouseEnter={() => fetchJobsWithCache().catch(() => {})}
+              >
+                🚀 Explore Open Roles &rarr;
+              </Link>
+              <Link
+                to="/companies"
+                className="btn btn-outline"
+                onMouseEnter={() => fetchCompaniesWithCache().catch(() => {})}
+              >
+                🏢 View Employers
+              </Link>
+            </>
+          )}
         </div>
       </section>
 

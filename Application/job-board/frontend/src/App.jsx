@@ -5,6 +5,7 @@ import { useAuth } from './auth/useAuth';
 
 // Components
 import { Sidebar } from './components/Sidebar';
+import { TopHeader } from './components/TopHeader';
 import { Footer } from './components/Footer';
 
 // Pages
@@ -47,6 +48,7 @@ export function App() {
         <div className={`sidebar-layout ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
           <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
           <div className="layout-body">
+            <TopHeader />
             <main className="main-content">
               <Routes>
                 {/* Public Routes */}

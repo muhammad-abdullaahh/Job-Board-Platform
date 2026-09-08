@@ -139,41 +139,11 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
               {showFullNav && <span className="link-label">Dashboard</span>}
             </NavLink>
           )}
-
-          {!isAuthenticated && (
-            <>
-              {showFullNav && <div className="nav-section-title" style={{ marginTop: '1.25rem' }}>AUTHENTICATION</div>}
-              <NavLink
-                to="/login"
-                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                onClick={closeDrawer}
-                title={!showFullNav ? "Log In" : undefined}
-              >
-                <span className="link-icon">🔑</span>
-                {showFullNav && <span className="link-label">Log In</span>}
-              </NavLink>
-
-              <NavLink
-                to="/register"
-                className={({ isActive }) => `sidebar-link sidebar-link-register ${isActive ? 'active' : ''}`}
-                onClick={closeDrawer}
-                title={!showFullNav ? "Register Free" : undefined}
-              >
-                <span className="link-icon">✨</span>
-                {showFullNav && (
-                  <span className="link-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span>Register</span>
-                    <span className="sidebar-nav-pill">Free</span>
-                  </span>
-                )}
-              </NavLink>
-            </>
-          )}
         </nav>
 
-        {/* Bottom User / Auth Section */}
-        <div className="sidebar-footer">
-          {isAuthenticated ? (
+        {/* Bottom User Section (Only when logged in) */}
+        {isAuthenticated && (
+          <div className="sidebar-footer">
             <div className="sidebar-user-card" title={!showFullNav ? `${user?.name || 'User'} (${user?.email})` : undefined}>
               <div className="user-info-row">
                 <div className="user-avatar">
@@ -208,29 +178,8 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
                 {showFullNav && <span>Sign Out</span>}
               </button>
             </div>
-          ) : (
-            <div className="sidebar-auth-card">
-              {showFullNav ? (
-                <div className="sidebar-guest-card">
-                  <div className="guest-card-header">
-                    <span className="guest-card-icon">🚀</span>
-                    <span className="guest-card-title">Join Job-Board</span>
-                  </div>
-                  <p className="auth-prompt">
-                    Unlimited job access, direct applications & salary tracking.
-                  </p>
-                  <Link to="/register" className="btn btn-emerald-sidebar" onClick={closeDrawer}>
-                    Get Started Free &rarr;
-                  </Link>
-                </div>
-              ) : (
-                <Link to="/register" className="btn-sidebar-icon-cta" onClick={closeDrawer} title="Register Free">
-                  ✨
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </aside>
     </>
   );
