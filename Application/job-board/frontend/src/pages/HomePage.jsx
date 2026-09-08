@@ -5,16 +5,18 @@ import { fetchCompaniesWithCache } from '../api/companiesApi';
 import { useAuth } from '../auth/useAuth';
 import { JobCard } from '../components/JobCard';
 import { SkeletonJobGrid } from '../components/SkeletonJobCard';
+import { SkeletonCompanyGrid } from '../components/SkeletonCompanyCard';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 
 export const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [companiesLoading, setCompaniesLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const loadJobs = async () => {
-    // Only set loading to true if we don't already have jobs in state
     if (jobs.length === 0) {
       setLoading(true);
     }
@@ -36,19 +38,32 @@ export const HomePage = () => {
     }
   };
 
+  const loadCompanies = async () => {
+    try {
+      await fetchCompaniesWithCache({}, {
+        onData: (data) => {
+          setCompanies(data || []);
+          setCompaniesLoading(false);
+        },
+        onError: () => {
+          setCompaniesLoading(false);
+        }
+      });
+    } catch (err) {
+      setCompaniesLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadJobs();
-
-    // Idle prefetching for next likely pages (Jobs & Companies)
-    const timer = setTimeout(() => {
-      fetchCompaniesWithCache().catch(() => {});
-    }, 1200);
-
-    return () => clearTimeout(timer);
+    loadCompanies();
   }, []);
 
   const visibleJobs = !isAuthenticated ? jobs.slice(0, 3) : jobs.slice(0, 6);
-  const lockedCount = Math.max(0, jobs.length - 3);
+  const lockedJobCount = Math.max(0, jobs.length - 3);
+
+  const visibleCompanies = !isAuthenticated ? companies.slice(0, 4) : companies.slice(0, 6);
+  const lockedCompanyCount = Math.max(0, companies.length - 4);
 
   return (
     <div className="page-container home-page">
@@ -122,7 +137,9 @@ export const HomePage = () => {
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600, marginTop: '0.25rem' }}>Active Job Positions</div>
         </div>
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: 'clamp(1rem, 3vw, 1.5rem)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ color: 'var(--accent-cyan)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>100%</div>
+          <div style={{ color: 'var(--accent-cyan)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', fontFamily: 'var(--font-heading)' }}>
+            {companiesLoading && companies.length === 0 ? '100%' : `${companies.length}+`}
+          </div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 600, marginTop: '0.25rem' }}>Verified Employers</div>
         </div>
         <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-light)', padding: 'clamp(1rem, 3vw, 1.5rem)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
@@ -132,7 +149,7 @@ export const HomePage = () => {
       </section>
 
       {/* Featured Jobs Section */}
-      <section className="featured-jobs">
+      <section className="featured-jobs" style={{ marginBottom: '4rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.85rem' }}>
           <div>
             <h2 style={{ fontSize: 'clamp(1.45rem, 3.5vw, 1.85rem)' }}>Featured Opportunities</h2>
@@ -142,9 +159,15 @@ export const HomePage = () => {
                 : 'Verified job listings from top hiring organizations.'}
             </p>
           </div>
-          <Link to="/jobs" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-            View All Jobs &rarr;
-          </Link>
+          {!isAuthenticated ? (
+            <Link to="/register" className="btn btn-emerald" style={{ fontSize: '0.85rem', padding: '0.5rem 1.15rem' }}>
+              View More Jobs &rarr;
+            </Link>
+          ) : (
+            <Link to="/jobs" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.5rem 1.15rem' }}>
+              View All Jobs &rarr;
+            </Link>
+          )}
         </div>
 
         {loading && jobs.length === 0 ? (
@@ -182,23 +205,87 @@ export const HomePage = () => {
               ))}
             </div>
 
-            {!isAuthenticated && lockedCount > 0 && (
-              <div className="home-unlock-banner">
-                <div className="unlock-banner-content">
-                  <div className="unlock-banner-icon">🔒</div>
+            {/* View More Button for Guests */}
+            {!isAuthenticated && (
+              <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                <Link to="/register" className="btn btn-emerald" style={{ padding: '0.8rem 2.25rem', fontSize: '0.95rem' }}>
+                  View More Jobs (Register Free) &rarr;
+                </Link>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {/* Top Companies / Employers Section */}
+      <section className="featured-companies" style={{ marginBottom: '4rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.85rem' }}>
+          <div>
+            <h2 style={{ fontSize: 'clamp(1.45rem, 3.5vw, 1.85rem)' }}>Top Hiring Companies</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {!isAuthenticated 
+                ? `Guest Preview: Showing top 4 verified employers hiring now.`
+                : 'Explore leading verified tech companies actively recruiting.'}
+            </p>
+          </div>
+          {!isAuthenticated ? (
+            <Link to="/register" className="btn btn-emerald" style={{ fontSize: '0.85rem', padding: '0.5rem 1.15rem' }}>
+              View More Companies &rarr;
+            </Link>
+          ) : (
+            <Link to="/companies" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.5rem 1.15rem' }}>
+              View All Employers &rarr;
+            </Link>
+          )}
+        </div>
+
+        {companiesLoading && companies.length === 0 ? (
+          <SkeletonCompanyGrid count={4} />
+        ) : companies.length === 0 ? (
+          <div style={{ background: 'var(--surface-card)', padding: '2.5rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
+            <h3>No companies listed yet</h3>
+            <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Check back soon as verified organizations join.</p>
+          </div>
+        ) : (
+          <>
+            <div className="companies-grid">
+              {visibleCompanies.map((company) => (
+                <div key={company.company_id} className="job-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
                   <div>
-                    <h4>Unlock +{lockedCount} More Verified Job Openings</h4>
-                    <p>Create your free candidate account to browse all listings, view salary details, and apply with one click.</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: '1.2rem', color: 'var(--primary)', margin: 0, flex: 1, minWidth: '160px', wordBreak: 'break-word' }}>{company.name}</h3>
+                      {company.is_verified ? (
+                        <span className="badge badge-primary" style={{ fontSize: '0.75rem', flexShrink: 0 }}>✓ Verified</span>
+                      ) : (
+                        <span className="badge badge-accent" style={{ fontSize: '0.75rem', flexShrink: 0 }}>Pending</span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {company.location && <span>📍 Location: {company.location}</span>}
+                      {company.website && (
+                        <span style={{ wordBreak: 'break-all' }}>🌐 Website: <a href={company.website} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>{company.website}</a></span>
+                      )}
+                    </div>
+
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineClamp: 3, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {company.description || 'Verified organization hiring top talent on Job-Board.'}
+                    </p>
                   </div>
-                </div>
-                <div className="unlock-banner-actions">
-                  <Link to="/register" className="btn btn-emerald">
-                    Register Free &rarr;
-                  </Link>
-                  <Link to="/login" className="btn btn-outline">
-                    Log In
+
+                  <Link to={!isAuthenticated ? "/register" : `/companies/${company.company_id}`} className="btn btn-outline" style={{ textAlign: 'center', width: '100%', minHeight: '40px' }}>
+                    {!isAuthenticated ? 'Register to View Profile →' : 'View Company Profile →'}
                   </Link>
                 </div>
+              ))}
+            </div>
+
+            {/* View More Button for Guests */}
+            {!isAuthenticated && (
+              <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                <Link to="/register" className="btn btn-emerald" style={{ padding: '0.8rem 2.25rem', fontSize: '0.95rem' }}>
+                  View More Companies (Register Free) &rarr;
+                </Link>
               </div>
             )}
           </>

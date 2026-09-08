@@ -29,7 +29,9 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-export function App() {
+// App layout controller that observes auth state
+function AppContent() {
+  const { isAuthenticated } = useAuth();
   const [isCollapsed, setIsCollapsed] = React.useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
@@ -43,39 +45,47 @@ export function App() {
   };
 
   return (
+    <div className={isAuthenticated ? `sidebar-layout ${isCollapsed ? 'sidebar-collapsed' : ''}` : 'public-layout'}>
+      {isAuthenticated && (
+        <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
+      )}
+      <div className={isAuthenticated ? 'layout-body' : 'public-layout-body'}>
+        <TopHeader />
+        <main className="main-content">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/jobs" element={<JobListingsPage />} />
+            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route path="/companies" element={<CompaniesPage />} />
+            <Route path="/companies/:companyId" element={<CompanyDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </div>
+  );
+}
+
+export function App() {
+  return (
     <AuthProvider>
       <Router>
-        <div className={`sidebar-layout ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
-          <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
-          <div className="layout-body">
-            <TopHeader />
-            <main className="main-content">
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/jobs" element={<JobListingsPage />} />
-                <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-                <Route path="/companies" element={<CompaniesPage />} />
-                <Route path="/companies/:companyId" element={<CompanyDetailPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                {/* Protected Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );

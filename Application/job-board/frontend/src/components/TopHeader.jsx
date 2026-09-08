@@ -29,19 +29,29 @@ export const TopHeader = ({ onMobileMenuToggle }) => {
   return (
     <header className="top-header">
       <div className="top-header-left">
-        {onMobileMenuToggle && (
-          <button
-            className="top-header-mobile-toggle"
-            onClick={onMobileMenuToggle}
-            aria-label="Toggle navigation menu"
-          >
-            ☰
-          </button>
+        {!isAuthenticated ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <Link to="/" className="top-header-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
+              <img src="/logo-icon.png" alt="Job-Board Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }} />
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
+                Job-<span style={{ color: 'var(--primary)' }}>Board</span>
+              </span>
+            </Link>
+            <nav className="top-header-public-nav" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <Link to="/jobs" className="top-header-nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
+                💼 Explore Jobs
+              </Link>
+              <Link to="/companies" className="top-header-nav-link" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
+                🏢 Employers
+              </Link>
+            </nav>
+          </div>
+        ) : (
+          <div className="top-header-title-wrap">
+            <span className="top-header-badge">✨ PLATFORM</span>
+            <span className="top-header-subtitle">{context.subtitle}</span>
+          </div>
         )}
-        <div className="top-header-title-wrap">
-          <span className="top-header-badge">✨ PLATFORM</span>
-          <span className="top-header-subtitle">{context.subtitle}</span>
-        </div>
       </div>
 
       <div className="top-header-right">
