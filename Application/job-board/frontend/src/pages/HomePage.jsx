@@ -6,14 +6,24 @@ import { JobCard } from '../components/JobCard';
 export const HomePage = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchJobsApi();
+      setJobs(data || []);
+    } catch (err) {
+      console.error('Failed to load featured jobs:', err);
+      setError('Unable to load jobs at this time. The server or database may be connecting.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchJobsApi()
-      .then((data) => {
-        setJobs(data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    loadJobs();
   }, []);
 
   return (
@@ -68,6 +78,26 @@ export const HomePage = () => {
 
         {loading ? (
           <p style={{ color: 'var(--text-muted)' }}>Searching live opportunities...</p>
+        ) : error ? (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            padding: '2rem',
+            textAlign: 'center',
+            borderRadius: 'var(--radius-lg)',
+            maxWidth: '520px',
+            margin: '0 auto'
+          }}>
+            <h3 style={{ color: '#ef4444', marginBottom: '0.4rem' }}>Connection Notice</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>{error}</p>
+            <button
+              onClick={loadJobs}
+              className="btn btn-primary"
+              style={{ padding: '0.5rem 1.25rem', cursor: 'pointer' }}
+            >
+              🔄 Retry Connection
+            </button>
+          </div>
         ) : jobs.length === 0 ? (
           <div style={{ background: 'var(--surface-card)', padding: '3rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
             <h3>No job listings posted yet</h3>

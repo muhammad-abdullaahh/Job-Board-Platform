@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import or_
 from app.models.job import Job, JobStatus, EmploymentType
 from app.models.skill import Skill
@@ -12,6 +12,10 @@ class JobRepository:
     def get_by_id(self, job_id: int) -> Optional[Job]:
         return (
             self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
             .filter(
                 Job.job_id == job_id,
                 Job.deleted_at.is_(None)
@@ -20,11 +24,23 @@ class JobRepository:
         )
 
     def get_any_by_id(self, job_id: int) -> Optional[Job]:
-        return self.db.query(Job).filter(Job.job_id == job_id).first()
+        return (
+            self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
+            .filter(Job.job_id == job_id)
+            .first()
+        )
 
     def get_by_id_and_company(self, job_id: int, company_id: int) -> Optional[Job]:
         return (
             self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
             .filter(
                 Job.job_id == job_id,
                 Job.company_id == company_id,
@@ -44,7 +60,14 @@ class JobRepository:
         skip: int = 0,
         limit: int = 100
     ) -> List[Job]:
-        q = self.db.query(Job).filter(Job.deleted_at.is_(None))
+        q = (
+            self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
+            .filter(Job.deleted_at.is_(None))
+        )
 
         if status:
             q = q.filter(Job.status == status)

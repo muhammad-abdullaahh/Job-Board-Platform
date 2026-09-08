@@ -1,15 +1,25 @@
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from app.models.application import Application, ApplicationStatus
+from app.models.job import Job
+from app.models.user import User
 
 class ApplicationRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def _eager_options(self):
+        return [
+            joinedload(Application.job).joinedload(Job.company),
+            selectinload(Application.job).selectinload(Job.skills),
+            joinedload(Application.applicant).selectinload(User.skills),
+        ]
+
     def get_by_id(self, application_id: int) -> Optional[Application]:
         return (
             self.db.query(Application)
+            .options(*self._eager_options())
             .filter(
                 Application.application_id == application_id,
                 Application.deleted_at.is_(None)
@@ -20,6 +30,7 @@ class ApplicationRepository:
     def get_user_application_for_job(self, user_id: int, job_id: int) -> Optional[Application]:
         return (
             self.db.query(Application)
+            .options(*self._eager_options())
             .filter(
                 Application.user_id == user_id,
                 Application.job_id == job_id,
@@ -31,6 +42,7 @@ class ApplicationRepository:
     def get_user_applications(self, user_id: int) -> List[Application]:
         return (
             self.db.query(Application)
+            .options(*self._eager_options())
             .filter(
                 Application.user_id == user_id,
                 Application.deleted_at.is_(None)
@@ -42,6 +54,7 @@ class ApplicationRepository:
     def get_job_applications(self, job_id: int) -> List[Application]:
         return (
             self.db.query(Application)
+            .options(*self._eager_options())
             .filter(
                 Application.job_id == job_id,
                 Application.deleted_at.is_(None)

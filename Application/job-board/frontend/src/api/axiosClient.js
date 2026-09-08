@@ -34,16 +34,22 @@ axiosClient.interceptors.request.use(
 );
 
 // Interceptor to automatically handle token refresh on 401 Unauthorized
+// and auto-retry idempotent GET requests once on transient network/timeout errors
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // 1. Handle 401 Unauthorized token refresh
     if (
       error.response &&
       error.response.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/auth/login') &&
-      !originalRequest.url.includes('/auth/refresh')
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/refresh')
     ) {
       originalRequest._retry = true;
       try {
@@ -61,6 +67,21 @@ axiosClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
+
+    // 2. Auto-retry idempotent GET requests once on transient errors (network timeout, 502, 503, 504)
+    const isGet = (originalRequest.method || 'get').toLowerCase() === 'get';
+    const isTransient =
+      !error.response ||
+      error.code === 'ECONNABORTED' ||
+      [502, 503, 504].includes(error.response?.status);
+
+    if (isGet && isTransient && !originalRequest._isRetry) {
+      originalRequest._isRetry = true;
+      // Brief wait for cold-start or connection stabilization before re-trying
+      await new Promise((resolve) => setTimeout(resolve, 750));
+      return axiosClient(originalRequest);
+    }
+
     return Promise.reject(error);
   }
 );

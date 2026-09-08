@@ -6,14 +6,24 @@ export const CompaniesPage = () => {
   const [companies, setCompanies] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadCompanies = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchCompaniesApi();
+      setCompanies(data || []);
+    } catch (err) {
+      console.error('Failed to load companies:', err);
+      setError('Unable to load company directory right now. The server or database may be connecting.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchCompaniesApi()
-      .then((data) => {
-        setCompanies(data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    loadCompanies();
   }, []);
 
   const filteredCompanies = companies.filter((c) =>
@@ -40,6 +50,26 @@ export const CompaniesPage = () => {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Loading employer directory...</p>
+      ) : error ? (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.08)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          padding: '2.5rem',
+          textAlign: 'center',
+          borderRadius: 'var(--radius-lg)',
+          maxWidth: '560px',
+          margin: '0 auto'
+        }}>
+          <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Connection Notice</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>{error}</p>
+          <button
+            onClick={loadCompanies}
+            className="btn btn-primary"
+            style={{ padding: '0.6rem 1.5rem', cursor: 'pointer' }}
+          >
+            🔄 Retry Connection
+          </button>
+        </div>
       ) : filteredCompanies.length === 0 ? (
         <div style={{ background: 'var(--surface-card)', padding: 'clamp(1.5rem, 4vw, 3rem)', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
           <h3>No matching companies found</h3>

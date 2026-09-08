@@ -39,8 +39,8 @@ class JobResponse(BaseModel):
     title: str
     description: Optional[str] = None
     location: Optional[str] = None
-    salary_min: int
-    salary_max: int
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
     employment_type: EmploymentType
     status: JobStatus
     created_at: datetime

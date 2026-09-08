@@ -7,21 +7,47 @@ export const JobListingsPage = () => {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [employmentType, setEmploymentType] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [debouncedLocation, setDebouncedLocation] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Debounce search and location inputs by 300ms to avoid flooding Supabase with requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedLocation(location);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  const loadJobs = async () => {
     setLoading(true);
-    fetchJobsApi({
-      q: search || undefined,
-      location: location || undefined,
-      employment_type: employmentType || undefined
-    })
-      .then((data) => {
-        setJobs(data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [search, location, employmentType]);
+    setError(null);
+    try {
+      const data = await fetchJobsApi({
+        q: debouncedSearch.trim() || undefined,
+        location: debouncedLocation.trim() || undefined,
+        employment_type: employmentType || undefined,
+      });
+      setJobs(data || []);
+    } catch (err) {
+      console.error('Failed to load jobs:', err);
+      setError('Unable to load job listings right now. The database may be warming up or temporarily unreachable.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+  }, [debouncedSearch, debouncedLocation, employmentType]);
 
   return (
     <div className="page-container job-listings-page">
@@ -60,7 +86,29 @@ export const JobListingsPage = () => {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-muted)' }}>Searching opportunities...</p>
+        <div style={{ textAlign: 'center', padding: '3rem' }}>
+          <p style={{ color: 'var(--text-muted)' }}>Searching live opportunities...</p>
+        </div>
+      ) : error ? (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.08)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          padding: '2.5rem',
+          textAlign: 'center',
+          borderRadius: 'var(--radius-lg)',
+          maxWidth: '560px',
+          margin: '0 auto'
+        }}>
+          <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Connection Notice</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1.25rem' }}>{error}</p>
+          <button
+            onClick={loadJobs}
+            className="btn btn-primary"
+            style={{ padding: '0.6rem 1.5rem', cursor: 'pointer' }}
+          >
+            🔄 Retry Connection
+          </button>
+        </div>
       ) : jobs.length === 0 ? (
         <div style={{ background: 'var(--surface-card)', padding: '3rem', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
           <h3>No matching positions found</h3>

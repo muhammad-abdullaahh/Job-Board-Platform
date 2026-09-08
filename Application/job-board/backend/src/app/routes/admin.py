@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from app.database import get_db
 from app.dependencies.roles import require_admin
@@ -100,7 +100,14 @@ def get_all_jobs_admin(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    query = db.query(Job).filter(Job.deleted_at.is_(None))
+    query = (
+        db.query(Job)
+        .options(
+            joinedload(Job.company),
+            selectinload(Job.skills)
+        )
+        .filter(Job.deleted_at.is_(None))
+    )
     if status:
         query = query.filter(Job.status == status)
     if q:

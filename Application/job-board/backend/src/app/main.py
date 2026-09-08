@@ -13,8 +13,14 @@ import app.models  # Ensure all models are loaded
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize DB tables
-    Base.metadata.create_all(bind=engine)
+    # Initialize DB tables (skip on serverless where tables already exist to prevent 5-10s cold-start timeouts)
+    if not os.getenv("VERCEL"):
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            # Safe pass if tables already initialized or temporary network hiccup
+            pass
+
     # Start APScheduler background task (skip on serverless where background threads are frozen)
     scheduler = None
     if not os.getenv("VERCEL"):
