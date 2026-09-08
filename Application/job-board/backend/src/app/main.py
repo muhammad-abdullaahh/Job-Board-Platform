@@ -24,6 +24,8 @@ async def lifespan(app: FastAPI):
             with engine.connect() as conn:
                 conn.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(user_id)"))
                 conn.execute(text("UPDATE companies SET created_by = updated_by WHERE created_by IS NULL AND updated_by IS NOT NULL"))
+                conn.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS users_email_active_unique ON users (lower(email)) WHERE deleted_at IS NULL"))
                 conn.commit()
         except Exception as e:
             # Safe pass if tables already initialized or temporary network hiccup
@@ -114,6 +116,8 @@ def readiness_check():
             conn.execute(text("SELECT 1"))
             conn.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(user_id)"))
             conn.execute(text("UPDATE companies SET created_by = updated_by WHERE created_by IS NULL AND updated_by IS NOT NULL"))
+            conn.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS users_email_active_unique ON users (lower(email)) WHERE deleted_at IS NULL"))
             conn.commit()
         return {
             "status": "ready",

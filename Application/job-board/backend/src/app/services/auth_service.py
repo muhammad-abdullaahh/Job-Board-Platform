@@ -1,4 +1,5 @@
 from typing import Optional
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
@@ -18,19 +19,21 @@ class AuthService:
         self.user_repo = UserRepository(db)
 
     def register_user(self, user_in) -> Token:
-        existing_user = self.user_repo.get_user_by_email(user_in.email, include_deleted=True)
-        if existing_user:
-            if existing_user.deleted_at is not None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"An account with email '{user_in.email}' is currently suspended. Please contact support."
-                )
+        active_user = self.user_repo.get_user_by_email(user_in.email, include_deleted=False)
+        if active_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Email '{user_in.email}' is already registered."
             )
 
-        user = self.user_repo.create_user(user_in)
+        try:
+            user = self.user_repo.create_user(user_in)
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email '{user_in.email}' is already registered."
+            )
+
         role = "admin" if user.is_admin else "user"
         access_token_str = create_access_token(
             data={"sub": str(user.user_id), "role": role, "email": user.email}
@@ -49,17 +52,23 @@ class AuthService:
         )
 
     def login(self, login_in) -> Token:
-        user = self.user_repo.get_user_by_email(login_in.email, include_deleted=True)
-        if not user or not verify_password(login_in.password, user.password):
+        user = self.user_repo.get_user_by_email(login_in.email, include_deleted=False)
+        if not user:
+            deleted_user = self.user_repo.get_user_by_email(login_in.email, include_deleted=True)
+            if deleted_user and deleted_user.deleted_at is not None and verify_password(login_in.password, deleted_user.password):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your account has been deactivated or suspended. Please contact support."
+                )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password."
             )
 
-        if user.deleted_at is not None:
+        if not verify_password(login_in.password, user.password):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Your account has been suspended by an administrator. Please contact support."
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password."
             )
 
         role = "admin" if user.is_admin else "user"
@@ -131,14 +140,9 @@ class AuthService:
 
     def request_password_reset(self, email: str) -> Optional[str]:
         clean_email = email.strip().lower()
-        user = self.user_repo.get_user_by_email(clean_email, include_deleted=True)
+        user = self.user_repo.get_user_by_email(clean_email, include_deleted=False)
         if not user:
             return None
-        if user.deleted_at is not None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="This account has been suspended by an administrator. Password reset is not permitted."
-            )
         return create_password_reset_token(clean_email)
 
     def reset_password(self, token: str, new_password: str):

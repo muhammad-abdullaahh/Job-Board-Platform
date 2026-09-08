@@ -19,6 +19,8 @@ class UserRepository:
         query = self.db.query(User).filter(func.lower(User.email) == clean_email)
         if not include_deleted:
             query = query.filter(User.deleted_at.is_(None))
+        else:
+            query = query.order_by(User.deleted_at.is_(None).desc(), User.created_at.desc())
         return query.first()
 
     def get_user_by_id(self, user_id: int, include_deleted: bool = False) -> Optional[User]:

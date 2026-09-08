@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.database import Base
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.skill import user_skills
@@ -10,7 +10,7 @@ class User(Base):
 
     user_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), nullable=False, index=True)
     password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -29,6 +29,15 @@ class User(Base):
 
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    __table_args__ = (
+        Index(
+            "users_email_active_unique",
+            func.lower(email),
+            unique=True,
+            postgresql_where=(deleted_at.is_(None)),
+        ),
+    )
 
     # Relationships
     skills = relationship("Skill", secondary=user_skills, back_populates="users")
