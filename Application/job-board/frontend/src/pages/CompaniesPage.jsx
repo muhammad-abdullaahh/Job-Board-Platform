@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCompaniesWithCache, fetchCompaniesApi } from '../api/companiesApi';
+import { useAuth } from '../auth/useAuth';
 import { SkeletonCompanyGrid } from '../components/SkeletonCompanyCard';
 
+const GUEST_COMPANY_LIMIT = 4;
+
 export const CompaniesPage = () => {
+  const { isAuthenticated } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,12 +44,32 @@ export const CompaniesPage = () => {
     (c.location && c.location.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const visibleCompanies = !isAuthenticated ? filteredCompanies.slice(0, GUEST_COMPANY_LIMIT) : filteredCompanies;
+  const lockedCount = Math.max(0, filteredCompanies.length - GUEST_COMPANY_LIMIT);
+
   return (
     <div className="page-container companies-page">
       <div style={{ marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.35rem' }}>Top Employer Directory</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Explore verified organizations hiring top talent on JobBoard.</p>
       </div>
+
+      {!isAuthenticated && filteredCompanies.length > 0 && (
+        <div className="guest-preview-banner">
+          <div className="guest-preview-icon">🏢🔒</div>
+          <div className="guest-preview-text">
+            <strong>Guest Preview Mode:</strong> Showing 4 of {filteredCompanies.length} verified companies. Register for free to access direct contact details, employee reviews, and open positions.
+          </div>
+          <div className="guest-preview-actions">
+            <Link to="/register" className="btn btn-emerald" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
+              Register Free &rarr;
+            </Link>
+            <Link to="/login" className="btn btn-outline" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
+              Log In
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="filter-section" style={{ marginBottom: '2rem' }}>
         <input
@@ -86,7 +110,7 @@ export const CompaniesPage = () => {
         </div>
       ) : (
         <div className="companies-grid">
-          {filteredCompanies.map((company) => (
+          {visibleCompanies.map((company) => (
             <div key={company.company_id} className="job-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
@@ -115,6 +139,34 @@ export const CompaniesPage = () => {
               </Link>
             </div>
           ))}
+
+          {!isAuthenticated && lockedCount > 0 && (
+            <div className="job-card guest-lock-card">
+              <div className="guest-lock-badge-row">
+                <span className="guest-lock-icon">🏢🔒</span>
+                <span className="badge badge-accent">Sign In Required</span>
+              </div>
+              <h3 className="guest-lock-title">
+                +{lockedCount} More {lockedCount === 1 ? 'Employer' : 'Employers'} Hidden
+              </h3>
+              <p className="guest-lock-desc">
+                Register a free account to unlock full corporate profiles, internal tech stacks, recruiter contact info, and active hiring roles.
+              </p>
+              <div className="guest-lock-perks">
+                <div className="guest-perk-item">✓ Complete {filteredCompanies.length}+ verified directory</div>
+                <div className="guest-perk-item">✓ Direct hiring team contacts</div>
+                <div className="guest-perk-item">✓ Company culture & employee reviews</div>
+              </div>
+              <div className="guest-lock-actions">
+                <Link to="/register" className="btn btn-emerald" style={{ width: '100%', textAlign: 'center', marginBottom: '0.6rem' }}>
+                  Register Free to Unlock &rarr;
+                </Link>
+                <Link to="/login" className="btn btn-outline" style={{ width: '100%', textAlign: 'center' }}>
+                  Log In to Existing Account
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

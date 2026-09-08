@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchJobsWithCache, fetchJobsApi } from '../api/jobsApi';
 import { fetchCompaniesWithCache } from '../api/companiesApi';
+import { useAuth } from '../auth/useAuth';
 import { JobCard } from '../components/JobCard';
 import { SkeletonJobGrid } from '../components/SkeletonJobCard';
+import { TestimonialsSection } from '../components/TestimonialsSection';
 
 export const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,6 +46,9 @@ export const HomePage = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  const visibleJobs = !isAuthenticated ? jobs.slice(0, 3) : jobs.slice(0, 6);
+  const lockedCount = Math.max(0, jobs.length - 3);
 
   return (
     <div className="page-container home-page">
@@ -101,7 +107,11 @@ export const HomePage = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.85rem' }}>
           <div>
             <h2 style={{ fontSize: 'clamp(1.45rem, 3.5vw, 1.85rem)' }}>Featured Opportunities</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Verified job listings from top hiring organizations.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {!isAuthenticated 
+                ? `Guest Preview: Showing top 3 of ${jobs.length} verified job listings.`
+                : 'Verified job listings from top hiring organizations.'}
+            </p>
           </div>
           <Link to="/jobs" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
             View All Jobs &rarr;
@@ -136,13 +146,38 @@ export const HomePage = () => {
             <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Check back soon or register as an employer to post new positions.</p>
           </div>
         ) : (
-          <div className="jobs-grid">
-            {jobs.map((job) => (
-              <JobCard key={job.job_id || job.id} job={job} />
-            ))}
-          </div>
+          <>
+            <div className="jobs-grid">
+              {visibleJobs.map((job) => (
+                <JobCard key={job.job_id || job.id} job={job} />
+              ))}
+            </div>
+
+            {!isAuthenticated && lockedCount > 0 && (
+              <div className="home-unlock-banner">
+                <div className="unlock-banner-content">
+                  <div className="unlock-banner-icon">🔒</div>
+                  <div>
+                    <h4>Unlock +{lockedCount} More Verified Job Openings</h4>
+                    <p>Create your free candidate account to browse all listings, view salary details, and apply with one click.</p>
+                  </div>
+                </div>
+                <div className="unlock-banner-actions">
+                  <Link to="/register" className="btn btn-emerald">
+                    Register Free &rarr;
+                  </Link>
+                  <Link to="/login" className="btn btn-outline">
+                    Log In
+                  </Link>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
+
+      {/* Customer & Employer Testimonials Section */}
+      <TestimonialsSection />
     </div>
   );
 };

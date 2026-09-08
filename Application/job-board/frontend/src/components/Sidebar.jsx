@@ -139,6 +139,36 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
               {showFullNav && <span className="link-label">Dashboard</span>}
             </NavLink>
           )}
+
+          {!isAuthenticated && (
+            <>
+              {showFullNav && <div className="nav-section-title" style={{ marginTop: '1.25rem' }}>AUTHENTICATION</div>}
+              <NavLink
+                to="/login"
+                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={closeDrawer}
+                title={!showFullNav ? "Log In" : undefined}
+              >
+                <span className="link-icon">🔑</span>
+                {showFullNav && <span className="link-label">Log In</span>}
+              </NavLink>
+
+              <NavLink
+                to="/register"
+                className={({ isActive }) => `sidebar-link sidebar-link-register ${isActive ? 'active' : ''}`}
+                onClick={closeDrawer}
+                title={!showFullNav ? "Register Free" : undefined}
+              >
+                <span className="link-icon">✨</span>
+                {showFullNav && (
+                  <span className="link-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <span>Register</span>
+                    <span className="sidebar-nav-pill">Free</span>
+                  </span>
+                )}
+              </NavLink>
+            </>
+          )}
         </nav>
 
         {/* Bottom User / Auth Section */}
@@ -180,15 +210,24 @@ export const Sidebar = ({ isCollapsed = false, toggleCollapse }) => {
             </div>
           ) : (
             <div className="sidebar-auth-card">
-              {showFullNav && <p className="auth-prompt">Access candidate & employer features</p>}
-              <div className="auth-btn-group">
-                <Link to="/login" className="btn btn-outline-sidebar" onClick={closeDrawer} title={!showFullNav ? "Log In" : undefined}>
-                  {!showFullNav ? '🔑' : 'Log In'}
+              {showFullNav ? (
+                <div className="sidebar-guest-card">
+                  <div className="guest-card-header">
+                    <span className="guest-card-icon">🚀</span>
+                    <span className="guest-card-title">Join Job-Board</span>
+                  </div>
+                  <p className="auth-prompt">
+                    Unlimited job access, direct applications & salary tracking.
+                  </p>
+                  <Link to="/register" className="btn btn-emerald-sidebar" onClick={closeDrawer}>
+                    Get Started Free &rarr;
+                  </Link>
+                </div>
+              ) : (
+                <Link to="/register" className="btn-sidebar-icon-cta" onClick={closeDrawer} title="Register Free">
+                  ✨
                 </Link>
-                <Link to="/register" className="btn btn-emerald-sidebar" onClick={closeDrawer} title={!showFullNav ? "Register" : undefined}>
-                  {!showFullNav ? '✨' : 'Register →'}
-                </Link>
-              </div>
+              )}
             </div>
           )}
         </div>

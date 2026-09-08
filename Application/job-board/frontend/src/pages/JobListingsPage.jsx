@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchJobsWithCache, fetchJobsApi } from '../api/jobsApi';
+import { useAuth } from '../auth/useAuth';
 import { JobCard } from '../components/JobCard';
 import { SkeletonJobGrid } from '../components/SkeletonJobCard';
 
+const GUEST_JOB_LIMIT = 3;
+
 export const JobListingsPage = () => {
+  const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
@@ -87,12 +92,32 @@ export const JobListingsPage = () => {
     loadJobs();
   }, [debouncedSearch, debouncedLocation, employmentType, debouncedSalary, sortOption]);
 
+  const visibleJobs = !isAuthenticated ? jobs.slice(0, GUEST_JOB_LIMIT) : jobs;
+  const lockedCount = Math.max(0, jobs.length - GUEST_JOB_LIMIT);
+
   return (
     <div className="page-container job-listings-page">
       <div style={{ marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', marginBottom: '0.35rem' }}>Explore Opportunities</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Find your next role among active positions from verified companies.</p>
       </div>
+
+      {!isAuthenticated && jobs.length > 0 && (
+        <div className="guest-preview-banner">
+          <div className="guest-preview-icon">🔒</div>
+          <div className="guest-preview-text">
+            <strong>Guest Preview Mode:</strong> Showing 3 of {jobs.length} available opportunities. Register for free to unlock all open roles, salary bands, and 1-click apply.
+          </div>
+          <div className="guest-preview-actions">
+            <Link to="/register" className="btn btn-emerald" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
+              Register Free &rarr;
+            </Link>
+            <Link to="/login" className="btn btn-outline" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
+              Log In
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="filter-section" style={{ marginBottom: '2rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <input
@@ -171,9 +196,37 @@ export const JobListingsPage = () => {
         </div>
       ) : (
         <div className="jobs-grid">
-          {jobs.map((job) => (
+          {visibleJobs.map((job) => (
             <JobCard key={job.job_id || job.id} job={job} />
           ))}
+
+          {!isAuthenticated && lockedCount > 0 && (
+            <div className="job-card guest-lock-card">
+              <div className="guest-lock-badge-row">
+                <span className="guest-lock-icon">🔒</span>
+                <span className="badge badge-accent">Sign In Required</span>
+              </div>
+              <h3 className="guest-lock-title">
+                +{lockedCount} More {lockedCount === 1 ? 'Role' : 'Roles'} Available
+              </h3>
+              <p className="guest-lock-desc">
+                Join thousands of candidates getting direct interviews. Register for free to unlock all positions and verified salaries.
+              </p>
+              <div className="guest-lock-perks">
+                <div className="guest-perk-item">✓ Access {jobs.length}+ active postings</div>
+                <div className="guest-perk-item">✓ Real-time candidate application tracker</div>
+                <div className="guest-perk-item">✓ 48h verified employer response rate</div>
+              </div>
+              <div className="guest-lock-actions">
+                <Link to="/register" className="btn btn-emerald" style={{ width: '100%', textAlign: 'center', marginBottom: '0.6rem' }}>
+                  Register Free to Unlock &rarr;
+                </Link>
+                <Link to="/login" className="btn btn-outline" style={{ width: '100%', textAlign: 'center' }}>
+                  Log In to Existing Account
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
