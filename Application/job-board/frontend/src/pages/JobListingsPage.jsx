@@ -110,7 +110,7 @@ export const JobListingsPage = () => {
           </div>
           <div className="guest-preview-actions">
             <Link to="/register" className="btn btn-emerald" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
-              Register Free &rarr;
+              Register &rarr;
             </Link>
             <Link to="/login" className="btn btn-outline" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}>
               Log In
@@ -219,7 +219,7 @@ export const JobListingsPage = () => {
               </div>
               <div className="guest-lock-actions">
                 <Link to="/register" className="btn btn-emerald" style={{ width: '100%', textAlign: 'center', marginBottom: '0.6rem' }}>
-                  Register Free to Unlock &rarr;
+                  Register to Unlock &rarr;
                 </Link>
                 <Link to="/login" className="btn btn-outline" style={{ width: '100%', textAlign: 'center' }}>
                   Log In to Existing Account

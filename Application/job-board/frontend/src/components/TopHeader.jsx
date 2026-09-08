@@ -82,7 +82,7 @@ export const TopHeader = ({ onMobileMenuToggle }) => {
               Log In
             </Link>
             <Link to="/register" className="btn btn-emerald top-header-register-btn">
-              Register Free &rarr;
+              Register &rarr;
             </Link>
           </div>
         )}

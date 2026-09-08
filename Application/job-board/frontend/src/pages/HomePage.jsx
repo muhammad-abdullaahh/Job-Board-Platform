@@ -85,7 +85,7 @@ export const HomePage = () => {
                 className="btn btn-emerald"
                 style={{ padding: '0.85rem 1.65rem', fontSize: '0.975rem', fontWeight: 700 }}
               >
-                ✨ Register Free &rarr;
+                ✨ Register &rarr;
               </Link>
               <Link
                 to="/login"
@@ -209,7 +209,7 @@ export const HomePage = () => {
             {!isAuthenticated && (
               <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                 <Link to="/register" className="btn btn-emerald" style={{ padding: '0.8rem 2.25rem', fontSize: '0.95rem' }}>
-                  View More Jobs (Register Free) &rarr;
+                  View More Jobs &rarr;
                 </Link>
               </div>
             )}
@@ -284,7 +284,7 @@ export const HomePage = () => {
             {!isAuthenticated && (
               <div style={{ textAlign: 'center', marginTop: '2rem' }}>
                 <Link to="/register" className="btn btn-emerald" style={{ padding: '0.8rem 2.25rem', fontSize: '0.95rem' }}>
-                  View More Companies (Register Free) &rarr;
+                  View More Companies &rarr;
                 </Link>
               </div>
             )}
