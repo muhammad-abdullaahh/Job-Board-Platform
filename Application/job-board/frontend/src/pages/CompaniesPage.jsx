@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchCompaniesApi } from '../api/companiesApi';
+import { fetchCompaniesWithCache, fetchCompaniesApi } from '../api/companiesApi';
+import { SkeletonCompanyGrid } from '../components/SkeletonCompanyCard';
 
 export const CompaniesPage = () => {
   const [companies, setCompanies] = useState([]);
@@ -9,16 +10,24 @@ export const CompaniesPage = () => {
   const [error, setError] = useState(null);
 
   const loadCompanies = async () => {
-    setLoading(true);
+    if (companies.length === 0) {
+      setLoading(true);
+    }
     setError(null);
     try {
-      const data = await fetchCompaniesApi();
-      setCompanies(data || []);
+      await fetchCompaniesWithCache({}, {
+        onData: (data) => {
+          setCompanies(data || []);
+          setLoading(false);
+        },
+        onError: (err) => {
+          console.error('Failed to load companies:', err);
+          setError('Unable to load company directory right now. The server or database may be connecting.');
+          setLoading(false);
+        }
+      });
     } catch (err) {
-      console.error('Failed to load companies:', err);
-      setError('Unable to load company directory right now. The server or database may be connecting.');
-    } finally {
-      setLoading(false);
+      // Handled in onError callback
     }
   };
 
@@ -48,9 +57,9 @@ export const CompaniesPage = () => {
         />
       </div>
 
-      {loading ? (
-        <p style={{ color: 'var(--text-muted)' }}>Loading employer directory...</p>
-      ) : error ? (
+      {loading && companies.length === 0 ? (
+        <SkeletonCompanyGrid count={6} />
+      ) : error && companies.length === 0 ? (
         <div style={{
           background: 'rgba(239, 68, 68, 0.08)',
           border: '1px solid rgba(239, 68, 68, 0.25)',

@@ -28,31 +28,45 @@ class UserRepository:
             q = q.filter(User.deleted_at.is_(None))
         return q.first()
 
-    def get_all_users(self, include_deleted: bool = True) -> List[User]:
-        q = self.db.query(User)
+    def get_all_users(
+        self,
+        include_deleted: bool = True,
+        skip: int = 0,
+        limit: int = 100,
+        q: Optional[str] = None,
+        is_admin: Optional[bool] = None
+    ) -> List[User]:
+        query = self.db.query(User)
         if not include_deleted:
-            q = q.filter(User.deleted_at.is_(None))
-        return q.order_by(User.created_at.desc()).all()
+            query = query.filter(User.deleted_at.is_(None))
+        if is_admin is not None:
+            query = query.filter(User.is_admin == is_admin)
+        if q:
+            pattern = f"%{q.strip()}%"
+            query = query.filter(or_(User.name.ilike(pattern), User.email.ilike(pattern)))
+        return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
 
-    def create_user(self, user_in) -> User:
+    def create_user(self, user_in, is_admin: bool = False) -> User:
         hashed_pw = get_password_hash(user_in.password)
         user = User(
             name=user_in.name,
             email=user_in.email,
             password=hashed_pw,
-            is_admin=getattr(user_in, 'is_admin', False),
+            is_admin=is_admin,
             bio=getattr(user_in, 'bio', None),
             years_experience=getattr(user_in, 'years_of_experience', None) or getattr(user_in, 'years_experience', 0) or 0,
         )
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        try:
+            self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update_user(self, user: User, user_in) -> User:
         update_data = user_in.dict(exclude_unset=True)
-        if 'password' in update_data and update_data['password']:
-            update_data['password'] = get_password_hash(update_data['password'])
 
         if 'years_of_experience' in update_data:
             user.years_experience = update_data.pop('years_of_experience') or 0
@@ -63,105 +77,127 @@ class UserRepository:
             if hasattr(user, field):
                 setattr(user, field, value)
 
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update_user_password(self, user: User, new_hashed_password: str) -> User:
         user.password = new_hashed_password
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise
 
     def soft_delete_user(self, user: User, deleted_by_user_id: Optional[int] = None) -> User:
         now = datetime.now(timezone.utc)
-        user.deleted_at = now
-        if deleted_by_user_id:
-            user.deleted_by = deleted_by_user_id
-
-        # Cascade soft-delete respectively to associated entities:
-        # 1. Applications submitted by this user
-        self.db.query(Application).filter(
-            Application.user_id == user.user_id,
-            Application.deleted_at.is_(None)
-        ).update({"deleted_at": now}, synchronize_session=False)
-
-        # 2. Companies owned / created by this user
-        owned_companies = self.db.query(Company).filter(
-            Company.updated_by == user.user_id,
-            Company.deleted_at.is_(None)
-        ).all()
-        company_ids = [c.company_id for c in owned_companies]
-
-        for company in owned_companies:
-            company.deleted_at = now
+        try:
+            user.deleted_at = now
             if deleted_by_user_id:
-                company.deleted_by = deleted_by_user_id
+                user.deleted_by = deleted_by_user_id
 
-        # 3. Jobs created by this user OR attached to user's companies
-        job_filters = [Job.created_by == user.user_id]
-        if company_ids:
-            job_filters.append(Job.company_id.in_(company_ids))
-
-        owned_jobs = self.db.query(Job).filter(
-            or_(*job_filters),
-            Job.deleted_at.is_(None)
-        ).all()
-        job_ids = [j.job_id for j in owned_jobs]
-
-        for job in owned_jobs:
-            job.deleted_at = now
-            if deleted_by_user_id:
-                job.deleted_by = deleted_by_user_id
-
-        # 4. Applications for jobs owned by this user
-        if job_ids:
+            # Cascade soft-delete respectively to associated entities:
+            # 1. Applications submitted by this user
             self.db.query(Application).filter(
-                Application.job_id.in_(job_ids),
+                Application.user_id == user.user_id,
                 Application.deleted_at.is_(None)
             ).update({"deleted_at": now}, synchronize_session=False)
 
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+            # 2. Companies owned / created by this user
+            owned_companies = self.db.query(Company).filter(
+                or_(
+                    Company.created_by == user.user_id,
+                    and_(Company.created_by.is_(None), Company.updated_by == user.user_id)
+                ),
+                Company.deleted_at.is_(None)
+            ).all()
+            company_ids = [c.company_id for c in owned_companies]
+
+            for company in owned_companies:
+                company.deleted_at = now
+                if deleted_by_user_id:
+                    company.deleted_by = deleted_by_user_id
+
+            # 3. Jobs created by this user OR attached to user's companies
+            job_filters = [Job.created_by == user.user_id]
+            if company_ids:
+                job_filters.append(Job.company_id.in_(company_ids))
+
+            owned_jobs = self.db.query(Job).filter(
+                or_(*job_filters),
+                Job.deleted_at.is_(None)
+            ).all()
+            job_ids = [j.job_id for j in owned_jobs]
+
+            for job in owned_jobs:
+                job.deleted_at = now
+                if deleted_by_user_id:
+                    job.deleted_by = deleted_by_user_id
+
+            # 4. Applications for jobs owned by this user
+            if job_ids:
+                self.db.query(Application).filter(
+                    Application.job_id.in_(job_ids),
+                    Application.deleted_at.is_(None)
+                ).update({"deleted_at": now}, synchronize_session=False)
+
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise
 
     def restore_user(self, user: User) -> User:
-        user.deleted_at = None
-        user.deleted_by = None
+        try:
+            user.deleted_at = None
+            user.deleted_by = None
 
-        # Restore companies owned by this user
-        owned_companies = self.db.query(Company).filter(
-            Company.updated_by == user.user_id
-        ).all()
-        company_ids = [c.company_id for c in owned_companies]
+            # Restore companies owned by this user
+            owned_companies = self.db.query(Company).filter(
+                or_(
+                    Company.created_by == user.user_id,
+                    and_(Company.created_by.is_(None), Company.updated_by == user.user_id)
+                )
+            ).all()
+            company_ids = [c.company_id for c in owned_companies]
 
-        for company in owned_companies:
-            company.deleted_at = None
-            company.deleted_by = None
+            for company in owned_companies:
+                company.deleted_at = None
+                company.deleted_by = None
 
-        # Restore jobs created by this user or under user's companies
-        job_filters = [Job.created_by == user.user_id]
-        if company_ids:
-            job_filters.append(Job.company_id.in_(company_ids))
+            # Restore jobs created by this user or under user's companies
+            job_filters = [Job.created_by == user.user_id]
+            if company_ids:
+                job_filters.append(Job.company_id.in_(company_ids))
 
-        owned_jobs = self.db.query(Job).filter(or_(*job_filters)).all()
-        job_ids = [j.job_id for j in owned_jobs]
+            owned_jobs = self.db.query(Job).filter(or_(*job_filters)).all()
+            job_ids = [j.job_id for j in owned_jobs]
 
-        for job in owned_jobs:
-            job.deleted_at = None
-            job.deleted_by = None
+            for job in owned_jobs:
+                job.deleted_at = None
+                job.deleted_by = None
 
-        # Restore applications submitted by this user
-        self.db.query(Application).filter(
-            Application.user_id == user.user_id
-        ).update({"deleted_at": None}, synchronize_session=False)
-
-        # Restore applications for jobs owned by this user
-        if job_ids:
+            # Restore applications submitted by this user
             self.db.query(Application).filter(
-                Application.job_id.in_(job_ids)
+                Application.user_id == user.user_id
             ).update({"deleted_at": None}, synchronize_session=False)
 
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+            # Restore applications for jobs owned by this user
+            if job_ids:
+                self.db.query(Application).filter(
+                    Application.job_id.in_(job_ids)
+                ).update({"deleted_at": None}, synchronize_session=False)
+
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise

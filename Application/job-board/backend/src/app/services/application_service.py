@@ -8,6 +8,7 @@ from app.models.application import Application, ApplicationStatus
 from app.models.job import JobStatus
 from app.schemas.application_schema import ApplicationResponse
 from app.repositories.user_repository import UserRepository
+from app.utils.cache import api_cache
 
 VALID_TRANSITIONS = {
     ApplicationStatus.pending: {
@@ -37,6 +38,7 @@ VALID_TRANSITIONS = {
 
 class ApplicationService:
     def __init__(self, db: Session):
+        self.db = db
         self.app_repo = ApplicationRepository(db)
         self.job_repo = JobRepository(db)
         self.user_repo = UserRepository(db)
@@ -77,7 +79,10 @@ class ApplicationService:
 
         user = self.user_repo.get_user_by_id(requesting_user_id)
         is_admin = user.is_admin if user else False
-        is_company_owner = job.company and job.company.updated_by == requesting_user_id
+        is_company_owner = job.company and (
+            (job.company.created_by == requesting_user_id) or
+            (job.company.created_by is None and job.company.updated_by == requesting_user_id)
+        )
 
         if not is_admin and not is_company_owner:
             raise HTTPException(
@@ -103,7 +108,10 @@ class ApplicationService:
         user = self.user_repo.get_user_by_id(updater_user_id)
         is_admin = user.is_admin if user else False
         is_applicant = app.user_id == updater_user_id
-        is_company_owner = app.job and app.job.company and app.job.company.updated_by == updater_user_id
+        is_company_owner = app.job and app.job.company and (
+            (app.job.company.created_by == updater_user_id) or
+            (app.job.company.created_by is None and app.job.company.updated_by == updater_user_id)
+        )
 
         # 1. State machine transition path check
         if new_status != app.status:
@@ -129,27 +137,17 @@ class ApplicationService:
                     detail="Access denied. Only the hiring employer who posted this job can manage candidate application statuses."
                 )
 
-        # 4. Handle candidate offer acceptance -> Hard delete job posting from database
+        # 4. Handle candidate offer acceptance -> Persist application acceptance and close job posting
         if new_status == ApplicationStatus.offer_accepted:
-            now = datetime.now(timezone.utc)
-            response_payload = ApplicationResponse(
-                application_id=app.application_id,
-                user_id=app.user_id,
-                job_id=app.job_id,
-                cover_letter=app.cover_letter,
-                status=ApplicationStatus.offer_accepted,
-                created_at=app.created_at,
-                updated_at=now,
-                offer_issued_at=app.offer_issued_at,
-                offer_expires_at=app.offer_expires_at,
-                job=None,
-                applicant=None
-            )
-
+            updated_app = self.app_repo.update_status(app, new_status, updater_user_id)
             job = self.job_repo.get_any_by_id(app.job_id)
             if job:
-                self.job_repo.hard_delete(job)
-
-            return response_payload
+                job.status = JobStatus.closed
+                job.updated_at = datetime.now(timezone.utc)
+                job.updated_by = updater_user_id
+                self.db.commit()
+                self.db.refresh(job)
+            api_cache.clear_prefix("jobs:")
+            return updated_app
 
         return self.app_repo.update_status(app, new_status, updater_user_id)

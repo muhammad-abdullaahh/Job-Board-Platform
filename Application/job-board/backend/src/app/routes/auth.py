@@ -11,6 +11,11 @@ from app.schemas.auth_schema import (
     ForgotPasswordRequest,
     ResetPasswordRequest
 )
+from app.core.rate_limit import (
+    login_rate_limiter,
+    forgot_password_rate_limiter,
+    register_rate_limiter
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -31,7 +36,12 @@ def set_refresh_cookie(response: Response, refresh_token: str):
     )
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)
-def register_user(user_in: UserRegisterRequest, response: Response, db: Session = Depends(get_db)):
+def register_user(
+    user_in: UserRegisterRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    _rate: None = Depends(register_rate_limiter)
+):
     service = AuthService(db)
     token_res = service.register_user(user_in)
     if token_res.refresh_token:
@@ -39,7 +49,12 @@ def register_user(user_in: UserRegisterRequest, response: Response, db: Session 
     return token_res
 
 @router.post("/login", response_model=Token)
-def login(login_in: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(
+    login_in: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    _rate: None = Depends(login_rate_limiter)
+):
     service = AuthService(db)
     token_res = service.login(login_in)
     if token_res.refresh_token:
@@ -69,20 +84,26 @@ def logout(response: Response):
     return {"message": "Successfully logged out"}
 
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
-def forgot_password(request_in: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(
+    request_in: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+    _rate: None = Depends(forgot_password_rate_limiter)
+):
     service = AuthService(db)
     token = service.request_password_reset(request_in.email)
-    delivery = email_service.send_password_reset_email(to_email=request_in.email, token=token)
+    if token:
+        email_service.send_password_reset_email(to_email=request_in.email, token=token)
     return {
         "status": "success",
-        "message": delivery["message"],
-        "email_sent": delivery["sent"],
-        "reset_link": delivery.get("reset_link"),
-        "token": token
+        "message": "If an account with that email exists, password reset instructions have been sent."
     }
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
-def reset_password(request_in: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(
+    request_in: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+    _rate: None = Depends(forgot_password_rate_limiter)
+):
     service = AuthService(db)
     service.reset_password(request_in.token, request_in.new_password)
     return {"message": "Password has been successfully reset."}

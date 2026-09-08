@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { fetchJobsApi } from '../api/jobsApi';
+import { fetchJobsWithCache, fetchJobsApi } from '../api/jobsApi';
 import { JobCard } from '../components/JobCard';
+import { SkeletonJobGrid } from '../components/SkeletonJobCard';
 
 export const JobListingsPage = () => {
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [employmentType, setEmploymentType] = useState('');
+  const [minSalary, setMinSalary] = useState('');
+  const [sortOption, setSortOption] = useState('newest');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [debouncedLocation, setDebouncedLocation] = useState('');
+  const [debouncedSalary, setDebouncedSalary] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Debounce search and location inputs by 300ms to avoid flooding Supabase with requests
+  // Debounce search, location, and salary inputs by 300ms to avoid flooding Supabase with requests
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -27,27 +31,61 @@ export const JobListingsPage = () => {
     return () => clearTimeout(timer);
   }, [location]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSalary(minSalary);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [minSalary]);
+
   const loadJobs = async () => {
-    setLoading(true);
+    // Keep showing existing jobs if available, otherwise show skeleton
+    if (jobs.length === 0) {
+      setLoading(true);
+    }
     setError(null);
     try {
-      const data = await fetchJobsApi({
+      let sortBy = 'created_at';
+      let sortOrder = 'desc';
+      if (sortOption === 'oldest') {
+        sortBy = 'created_at';
+        sortOrder = 'asc';
+      } else if (sortOption === 'salary_desc') {
+        sortBy = 'salary';
+        sortOrder = 'desc';
+      } else if (sortOption === 'salary_asc') {
+        sortBy = 'salary';
+        sortOrder = 'asc';
+      }
+
+      const params = {
         q: debouncedSearch.trim() || undefined,
         location: debouncedLocation.trim() || undefined,
         employment_type: employmentType || undefined,
+        min_salary: debouncedSalary ? Number(debouncedSalary) : undefined,
+        sort_by: sortBy,
+        order: sortOrder,
+      };
+
+      await fetchJobsWithCache(params, {
+        onData: (data) => {
+          setJobs(data || []);
+          setLoading(false);
+        },
+        onError: (err) => {
+          console.error('Failed to load jobs:', err);
+          setError('Unable to load job listings right now. The database may be warming up or temporarily unreachable.');
+          setLoading(false);
+        }
       });
-      setJobs(data || []);
     } catch (err) {
-      console.error('Failed to load jobs:', err);
-      setError('Unable to load job listings right now. The database may be warming up or temporarily unreachable.');
-    } finally {
-      setLoading(false);
+      // Handled in onError callback
     }
   };
 
   useEffect(() => {
     loadJobs();
-  }, [debouncedSearch, debouncedLocation, employmentType]);
+  }, [debouncedSearch, debouncedLocation, employmentType, debouncedSalary, sortOption]);
 
   return (
     <div className="page-container job-listings-page">
@@ -56,7 +94,7 @@ export const JobListingsPage = () => {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Find your next role among active positions from verified companies.</p>
       </div>
 
-      <div className="filter-section" style={{ marginBottom: '2rem' }}>
+      <div className="filter-section" style={{ marginBottom: '2rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder="🔍 Search title or keyword..."
@@ -69,12 +107,12 @@ export const JobListingsPage = () => {
           placeholder="📍 Filter location..."
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          style={{ flex: '1 1 150px' }}
+          style={{ flex: '1 1 140px' }}
         />
         <select
           value={employmentType}
           onChange={(e) => setEmploymentType(e.target.value)}
-          style={{ flex: '1 1 150px' }}
+          style={{ flex: '1 1 140px' }}
         >
           <option value="">All Employment Types</option>
           <option value="full_time">Full Time</option>
@@ -83,13 +121,30 @@ export const JobListingsPage = () => {
           <option value="remote">Remote</option>
           <option value="internship">Internship</option>
         </select>
+        <input
+          type="number"
+          placeholder="💰 Min Salary ($)..."
+          value={minSalary}
+          onChange={(e) => setMinSalary(e.target.value)}
+          style={{ flex: '1 1 130px' }}
+          min="0"
+          step="5000"
+        />
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          style={{ flex: '1 1 140px' }}
+        >
+          <option value="newest">📅 Newest First</option>
+          <option value="oldest">📅 Oldest First</option>
+          <option value="salary_desc">💰 Highest Salary</option>
+          <option value="salary_asc">💰 Lowest Salary</option>
+        </select>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ color: 'var(--text-muted)' }}>Searching live opportunities...</p>
-        </div>
-      ) : error ? (
+      {loading && jobs.length === 0 ? (
+        <SkeletonJobGrid count={6} />
+      ) : error && jobs.length === 0 ? (
         <div style={{
           background: 'rgba(239, 68, 68, 0.08)',
           border: '1px solid rgba(239, 68, 68, 0.25)',

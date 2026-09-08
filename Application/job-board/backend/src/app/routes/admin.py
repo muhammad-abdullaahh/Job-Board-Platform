@@ -10,6 +10,7 @@ from app.models.company import Company
 from app.models.job import Job, JobStatus, EmploymentType
 from app.models.application import Application, ApplicationStatus
 from app.schemas.job_schema import JobResponse, AdminJobStatusUpdate
+from app.utils.cache import api_cache
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -138,6 +139,7 @@ def update_job_status_admin(
     job.updated_by = admin.user_id
     db.commit()
     db.refresh(job)
+    api_cache.clear_prefix("jobs:")
     return job
 
 @router.delete("/jobs/{job_id}", status_code=status.HTTP_200_OK)
@@ -153,14 +155,20 @@ def delete_job_admin(
             detail=f"Job #{job_id} not found."
         )
     now = datetime.now(timezone.utc)
-    job.deleted_at = now
-    job.deleted_by = admin.user_id
+    try:
+        job.deleted_at = now
+        job.deleted_by = admin.user_id
 
-    # Cascade soft delete to applications for this job
-    db.query(Application).filter(
-        Application.job_id == job_id,
-        Application.deleted_at.is_(None)
-    ).update({"deleted_at": now}, synchronize_session=False)
+        # Cascade soft delete to applications for this job
+        db.query(Application).filter(
+            Application.job_id == job_id,
+            Application.deleted_at.is_(None)
+        ).update({"deleted_at": now}, synchronize_session=False)
 
-    db.commit()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    api_cache.clear_prefix("jobs:")
     return {"message": f"Job #{job_id} ('{job.title}') deleted successfully by administrator."}

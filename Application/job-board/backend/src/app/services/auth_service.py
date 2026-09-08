@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.repositories.user_repository import UserRepository
@@ -112,16 +113,11 @@ class AuthService:
             email=user.email,
         )
 
-    def request_password_reset(self, email: str) -> str:
+    def request_password_reset(self, email: str) -> Optional[str]:
         clean_email = email.strip().lower()
         user = self.user_repo.get_user_by_email(clean_email)
-        
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No registered account found with email '{clean_email}'."
-            )
-            
+            return None
         return create_password_reset_token(clean_email)
 
     def reset_password(self, token: str, new_password: str):

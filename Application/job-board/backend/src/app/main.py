@@ -7,8 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
 from app.routes import auth, jobs, applications, companies, users, admin
+from fastapi.exceptions import RequestValidationError
 from app.scheduler import start_scheduler
-from app.core.error_handlers import http_exception_handler, generic_exception_handler
+from app.core.error_handlers import http_exception_handler, generic_exception_handler, validation_exception_handler
 import app.models  # Ensure all models are loaded
 
 @asynccontextmanager
@@ -17,6 +18,10 @@ async def lifespan(app: FastAPI):
     if not os.getenv("VERCEL"):
         try:
             Base.metadata.create_all(bind=engine)
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(user_id)"))
+                conn.execute(text("UPDATE companies SET created_by = updated_by WHERE created_by IS NULL AND updated_by IS NOT NULL"))
+                conn.commit()
         except Exception as e:
             # Safe pass if tables already initialized or temporary network hiccup
             pass
@@ -38,6 +43,7 @@ app = FastAPI(
 
 # Register Exception Handlers for Machine-Readable Responses
 app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
 # Correlation ID Middleware (Spec #13)
@@ -55,16 +61,22 @@ cors_origins = [
     "http://127.0.0.1:5173",
     "http://localhost:3000",
 ]
+if settings.FRONTEND_URL:
+    clean_frontend = settings.FRONTEND_URL.strip().rstrip("/")
+    if clean_frontend and clean_frontend not in cors_origins:
+        cors_origins.append(clean_frontend)
+
 if settings.CORS_ORIGINS:
-    extra_origins = [orig.strip() for orig in settings.CORS_ORIGINS.split(",") if orig.strip()]
-    cors_origins.extend(extra_origins)
+    extra_origins = [orig.strip().rstrip("/") for orig in settings.CORS_ORIGINS.split(",") if orig.strip()]
+    for orig in extra_origins:
+        if orig not in cors_origins:
+            cors_origins.append(orig)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"^(http://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app)$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

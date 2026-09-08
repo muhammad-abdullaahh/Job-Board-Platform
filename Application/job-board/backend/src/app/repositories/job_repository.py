@@ -58,7 +58,9 @@ class JobRepository:
         min_salary: Optional[int] = None,
         company_id: Optional[int] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        sort_by: Optional[str] = "created_at",
+        order: Optional[str] = "desc"
     ) -> List[Job]:
         q = (
             self.db.query(Job)
@@ -83,7 +85,19 @@ class JobRepository:
             pattern = f"%{query}%"
             q = q.filter(or_(Job.title.ilike(pattern), Job.description.ilike(pattern)))
 
-        return q.order_by(Job.created_at.desc()).offset(skip).limit(limit).all()
+        allowed_sort_fields = {
+            "created_at": Job.created_at,
+            "salary_max": Job.salary_max,
+            "salary_min": Job.salary_min,
+            "title": Job.title
+        }
+        sort_col = allowed_sort_fields.get(sort_by, Job.created_at)
+        if order and order.lower() == "asc":
+            q = q.order_by(sort_col.asc())
+        else:
+            q = q.order_by(sort_col.desc())
+
+        return q.offset(skip).limit(limit).all()
 
     def create(self, job_in, user_id: Optional[int] = None) -> Job:
         job = Job(
@@ -134,11 +148,24 @@ class JobRepository:
             raise
 
     def soft_delete(self, job: Job, deleted_by_user_id: int) -> Job:
-        job.deleted_at = datetime.now(timezone.utc)
-        job.deleted_by = deleted_by_user_id
-        self.db.commit()
-        self.db.refresh(job)
-        return job
+        now = datetime.now(timezone.utc)
+        try:
+            job.deleted_at = now
+            job.deleted_by = deleted_by_user_id
+
+            # Cascade soft-delete to applications for this job
+            from app.models.application import Application
+            self.db.query(Application).filter(
+                Application.job_id == job.job_id,
+                Application.deleted_at.is_(None)
+            ).update({"deleted_at": now}, synchronize_session=False)
+
+            self.db.commit()
+            self.db.refresh(job)
+            return job
+        except Exception:
+            self.db.rollback()
+            raise
 
     def hard_delete(self, job: Job) -> None:
         try:

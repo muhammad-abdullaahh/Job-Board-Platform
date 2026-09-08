@@ -10,9 +10,10 @@ class ApplicationRepository:
         self.db = db
 
     def _eager_options(self):
+        job_load = joinedload(Application.job)
         return [
-            joinedload(Application.job).joinedload(Job.company),
-            selectinload(Application.job).selectinload(Job.skills),
+            job_load.joinedload(Job.company),
+            job_load.selectinload(Job.skills),
             joinedload(Application.applicant).selectinload(User.skills),
         ]
 
@@ -71,10 +72,14 @@ class ApplicationRepository:
             status=ApplicationStatus.pending,
             created_by=user_id,
         )
-        self.db.add(application)
-        self.db.commit()
-        self.db.refresh(application)
-        return application
+        try:
+            self.db.add(application)
+            self.db.commit()
+            self.db.refresh(application)
+            return application
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update_status(
         self,
@@ -92,6 +97,10 @@ class ApplicationRepository:
             application.offer_issued_at = now
             application.offer_expires_at = now + timedelta(hours=48)
 
-        self.db.commit()
-        self.db.refresh(application)
-        return application
+        try:
+            self.db.commit()
+            self.db.refresh(application)
+            return application
+        except Exception:
+            self.db.rollback()
+            raise

@@ -1,5 +1,6 @@
 import logging
 from fastapi import Request, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger("app.error_handlers")
@@ -12,6 +13,7 @@ STATUS_CODE_TO_ERROR_CODE = {
     409: "CONFLICT",
     422: "UNPROCESSABLE_ENTITY",
     500: "INTERNAL_SERVER_ERROR",
+    503: "SERVICE_UNAVAILABLE",
 }
 
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -24,6 +26,20 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "status": exc.status_code,
             "code": code,
             "detail": exc.detail,
+            "correlation_id": correlation_id,
+        },
+        headers={"X-Correlation-ID": correlation_id} if correlation_id else {}
+    )
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    correlation_id = getattr(request.state, "correlation_id", None)
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": 422,
+            "code": "UNPROCESSABLE_ENTITY",
+            "detail": exc.errors(),
             "correlation_id": correlation_id,
         },
         headers={"X-Correlation-ID": correlation_id} if correlation_id else {}

@@ -22,11 +22,12 @@ class Company(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     verified_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True, index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     updated_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
     deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     # Relationships

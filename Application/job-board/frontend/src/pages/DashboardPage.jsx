@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { fetchMyApplicationsApi, fetchJobApplicationsApi, updateApplicationStatusApi } from '../api/applicationsApi';
 import { fetchUserProfileApi, updateUserProfileApi } from '../api/usersApi';
-import { fetchCompaniesApi, deleteCompanyApi } from '../api/companiesApi';
-import { fetchJobsApi } from '../api/jobsApi';
+import { fetchCompaniesApi, fetchMyCompanyApi, deleteCompanyApi } from '../api/companiesApi';
+import { fetchJobsApi, deleteJobApi } from '../api/jobsApi';
 import {
   verifyCompanyApi,
   fetchUsersApi,
@@ -74,6 +74,7 @@ export const DashboardPage = () => {
 
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showJobModal, setShowJobModal] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState(null);
 
@@ -105,7 +106,10 @@ export const DashboardPage = () => {
 
       // 5. Find company owned by logged in user
       if (user && user.user_id) {
-        const found = compsData.find((c) => c.updated_by === user.user_id || c.owner_user_id === user.user_id);
+        let found = await fetchMyCompanyApi().catch(() => null);
+        if (!found && compsData.length) {
+          found = compsData.find((c) => c.updated_by === user.user_id || c.created_by === user.user_id || c.owner_user_id === user.user_id);
+        }
         setMyCompany(found || null);
 
         if (found && found.company_id) {
@@ -144,6 +148,18 @@ export const DashboardPage = () => {
       setTimeout(() => setActionMessage(null), 3500);
     } catch (err) {
       alert(err.response?.data?.detail || 'Failed to verify company.');
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm('Are you sure you want to delete this job posting?')) return;
+    try {
+      await deleteJobApi(jobId, myCompany?.company_id);
+      setActionMessage('Job posting deleted successfully.');
+      loadDashboardData();
+      setTimeout(() => setActionMessage(null), 3500);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to delete job.');
     }
   };
 
@@ -609,7 +625,14 @@ export const DashboardPage = () => {
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--primary)', marginBottom: '0.25rem' }}>{myCompany.name}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>📍 {myCompany.location || 'Location Not Specified'} • Website: {myCompany.website || 'N/A'}</p>
               </div>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setEditingCompany(myCompany)}
+                  className="btn btn-outline"
+                  style={{ fontSize: '0.85rem', padding: '0.35rem 0.75rem' }}
+                >
+                  ✏️ Edit Profile
+                </button>
                 {myCompany.is_verified ? (
                   <span className="badge status-accepted" style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}>
                     ✓ Verified Employer
@@ -654,13 +677,29 @@ export const DashboardPage = () => {
                             <strong style={{ fontSize: '1.1rem', color: '#FFFFFF' }}>{job.title}</strong>
                             <span style={{ marginLeft: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📍 {job.location || 'Remote'}</span>
                           </div>
-                          <button
-                            onClick={() => handleFetchApplicationsForJob(job.job_id)}
-                            className="btn btn-outline"
-                            style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
-                          >
-                            {activeJobId === job.job_id ? 'Hide Applications' : 'View Received Applications'}
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setEditingJob(job)}
+                              className="btn btn-outline"
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
+                            >
+                              ✏️ Edit Job
+                            </button>
+                            <button
+                              onClick={() => handleDeleteJob(job.job_id)}
+                              className="btn btn-danger"
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
+                            >
+                              🗑️ Delete
+                            </button>
+                            <button
+                              onClick={() => handleFetchApplicationsForJob(job.job_id)}
+                              className="btn btn-outline"
+                              style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
+                            >
+                              {activeJobId === job.job_id ? 'Hide Applications' : 'View Received Applications'}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Expandable Applicants List for this Job */}
@@ -1516,13 +1555,19 @@ export const DashboardPage = () => {
         />
       )}
 
-      {showJobModal && myCompany && (
+      {(showJobModal || editingJob) && myCompany && (
         <JobCreateModal
           companyId={myCompany.company_id}
-          onClose={() => setShowJobModal(false)}
+          jobToEdit={editingJob}
+          onClose={() => {
+            setShowJobModal(false);
+            setEditingJob(null);
+          }}
           onSuccess={() => {
-            setActionMessage('Job posting created successfully!');
+            setActionMessage(editingJob ? 'Job posting updated successfully!' : 'Job posting created successfully!');
             loadDashboardData();
+            setShowJobModal(false);
+            setEditingJob(null);
           }}
         />
       )}

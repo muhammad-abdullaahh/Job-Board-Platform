@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { createJobApi } from '../api/jobsApi';
+import { createJobApi, updateJobApi } from '../api/jobsApi';
 import { fetchSkillsApi } from '../api/skillsApi';
 
-export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [salaryMin, setSalaryMin] = useState(50000);
-  const [salaryMax, setSalaryMax] = useState(100000);
-  const [employmentType, setEmploymentType] = useState('full_time');
+export const JobCreateModal = ({ companyId, jobToEdit = null, onClose, onSuccess }) => {
+  const [title, setTitle] = useState(jobToEdit?.title || '');
+  const [description, setDescription] = useState(jobToEdit?.description || '');
+  const [location, setLocation] = useState(jobToEdit?.location || '');
+  const [salaryMin, setSalaryMin] = useState(jobToEdit?.salary_min ?? 50000);
+  const [salaryMax, setSalaryMax] = useState(jobToEdit?.salary_max ?? 100000);
+  const [employmentType, setEmploymentType] = useState(jobToEdit?.employment_type || 'full_time');
   const [availableSkills, setAvailableSkills] = useState([]);
-  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState(jobToEdit?.skills?.map((s) => s.skill_id) || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,21 +33,33 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
     setLoading(true);
     setError(null);
     try {
-      await createJobApi({
-        company_id: companyId,
-        title,
-        description,
-        location,
-        salary_min: Number(salaryMin),
-        salary_max: Number(salaryMax),
-        employment_type: employmentType,
-        skill_ids: selectedSkills,
-      });
+      if (jobToEdit) {
+        await updateJobApi(jobToEdit.job_id, {
+          title,
+          description,
+          location,
+          salary_min: Number(salaryMin),
+          salary_max: Number(salaryMax),
+          employment_type: employmentType,
+          skill_ids: selectedSkills,
+        });
+      } else {
+        await createJobApi({
+          company_id: companyId,
+          title,
+          description,
+          location,
+          salary_min: Number(salaryMin),
+          salary_max: Number(salaryMax),
+          employment_type: employmentType,
+          skill_ids: selectedSkills,
+        });
+      }
       setLoading(false);
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create job posting.');
+      setError(err.response?.data?.detail || (jobToEdit ? 'Failed to update job posting.' : 'Failed to create job posting.'));
       setLoading(false);
     }
   };
@@ -57,9 +69,11 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <div>
-            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0 }}>Post a New Opportunity</h2>
+            <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0 }}>
+              {jobToEdit ? 'Edit Job Opportunity' : 'Post a New Opportunity'}
+            </h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: '0.2rem', fontSize: '0.875rem' }}>
-              Create a new job listing for your organization.
+              {jobToEdit ? 'Update job details and requirements for this listing.' : 'Create a new job listing for your organization.'}
             </p>
           </div>
           <button
@@ -179,7 +193,7 @@ export const JobCreateModal = ({ companyId, onClose, onSuccess }) => {
           <div className="modal-actions">
             <button type="button" onClick={onClose} className="btn btn-outline">Cancel</button>
             <button type="submit" disabled={loading} className="btn btn-primary">
-              {loading ? 'Publishing...' : 'Publish Job Listing'}
+              {loading ? (jobToEdit ? 'Saving...' : 'Publishing...') : jobToEdit ? 'Save Changes' : 'Publish Job Listing'}
             </button>
           </div>
         </form>

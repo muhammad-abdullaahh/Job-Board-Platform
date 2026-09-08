@@ -31,7 +31,9 @@ class JobService:
         min_salary: Optional[int] = None,
         company_id: Optional[int] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        sort_by: Optional[str] = "created_at",
+        order: Optional[str] = "desc"
     ) -> List[Job]:
         # Default to open jobs for public search unless filtering by specific company
         if status_filter is None and company_id is None:
@@ -46,6 +48,8 @@ class JobService:
             company_id=company_id,
             skip=skip,
             limit=limit,
+            sort_by=sort_by,
+            order=order,
         )
 
     def create_job(self, job_in, user_id: Optional[int] = None) -> Job:
@@ -70,7 +74,8 @@ class JobService:
             )
 
         # 2. Company Ownership Check
-        if user_id and company.updated_by != user_id and not is_admin:
+        is_owner = (company.created_by == user_id) or (company.created_by is None and company.updated_by == user_id)
+        if user_id and not is_owner and not is_admin:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied. You can only post job listings for your own organization."
@@ -78,15 +83,40 @@ class JobService:
 
         return self.job_repo.create(job_in, user_id)
 
+    def _check_job_ownership(self, job: Job, user_id: Optional[int]):
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication credentials required."
+            )
+        user = self.user_repo.get_user_by_id(user_id)
+        is_admin = user.is_admin if user else False
+        company = job.company
+        is_owner = company and (
+            (company.created_by == user_id) or
+            (company.created_by is None and company.updated_by == user_id)
+        )
+        if not is_admin and not is_owner:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied. You can only manage job postings belonging to your own organization."
+            )
+
     def update_job(self, job_id: int, job_in, user_id: Optional[int] = None) -> Job:
         job = self.get_job(job_id)
+        self._check_job_ownership(job, user_id)
         return self.job_repo.update(job, job_in, user_id)
 
-    def delete_job(self, job_id: int, company_id: int, deleted_by_user_id: int) -> Job:
-        job = self.job_repo.get_by_id_and_company(job_id, company_id)
+    def delete_job(self, job_id: int, deleted_by_user_id: int, company_id: Optional[int] = None) -> Job:
+        if company_id:
+            job = self.job_repo.get_by_id_and_company(job_id, company_id)
+        else:
+            job = self.job_repo.get_by_id(job_id)
+
         if not job:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Job #{job_id} belonging to company #{company_id} not found."
+                detail=f"Job #{job_id} not found."
             )
+        self._check_job_ownership(job, deleted_by_user_id)
         return self.job_repo.soft_delete(job, deleted_by_user_id)

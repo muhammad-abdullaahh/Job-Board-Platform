@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import APIRouter, Depends, status, HTTPException
+from typing import List, Optional
+from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
@@ -8,6 +8,7 @@ from app.models.user import User
 from app.services.user_service import UserService
 from app.repositories.skill_repository import SkillRepository
 from app.schemas.user_schema import UserResponse, UserUpdate, AdminRoleUpdate, SkillResponse, SkillCreate
+from app.utils.cache import api_cache
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -26,11 +27,15 @@ def update_user_profile(
 
 @router.get("", response_model=List[UserResponse])
 def get_all_users(
+    skip: int = 0,
+    limit: int = 100,
+    q: Optional[str] = Query(None, description="Search users by name or email"),
+    is_admin: Optional[bool] = Query(None, description="Filter users by admin role"),
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
     service = UserService(db)
-    return service.get_all_users()
+    return service.get_all_users(skip=skip, limit=limit, q=q, is_admin=is_admin)
 
 @router.patch("/{user_id}/role", response_model=UserResponse)
 def update_user_role(
@@ -118,4 +123,5 @@ def delete_skill(
         )
     name = skill.name
     repo.delete(skill)
+    api_cache.clear_prefix("jobs:")
     return {"message": f"Skill '{name}' deleted successfully."}

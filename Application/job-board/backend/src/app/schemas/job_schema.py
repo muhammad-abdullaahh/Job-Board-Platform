@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from app.models.job import EmploymentType, JobStatus
-from app.schemas.company_schema import CompanyResponse
+from app.schemas.company_schema import PublicCompanyResponse, CompanyResponse
 from app.schemas.user_schema import SkillResponse
 
 
@@ -45,7 +45,7 @@ class JobResponse(BaseModel):
     status: JobStatus
     created_at: datetime
     updated_at: Optional[datetime] = None
-    company: Optional[CompanyResponse] = None
+    company: Optional[PublicCompanyResponse] = None
     skills: List[SkillResponse] = []
 
     class Config:

@@ -19,8 +19,20 @@ class UserService:
             )
         return user
 
-    def get_all_users(self) -> List[User]:
-        return self.user_repo.get_all_users(include_deleted=True)
+    def get_all_users(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        q: Optional[str] = None,
+        is_admin: Optional[bool] = None
+    ) -> List[User]:
+        return self.user_repo.get_all_users(
+            include_deleted=True,
+            skip=skip,
+            limit=limit,
+            q=q,
+            is_admin=is_admin
+        )
 
     def update_user_profile(self, user: User, user_in) -> User:
         update_data = user_in.dict(exclude_unset=True)

@@ -31,14 +31,14 @@ class Job(Base):
     salary_max = Column(Integer, nullable=True)
 
     employment_type = Column(SQLEnum(EmploymentType), default=EmploymentType.full_time, nullable=False)
-    status = Column(SQLEnum(JobStatus), default=JobStatus.open, nullable=False)
+    status = Column(SQLEnum(JobStatus), default=JobStatus.open, nullable=False, index=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     updated_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
     deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     # Relationships

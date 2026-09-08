@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_
 from app.models.company import Company
 from app.models.job import Job
 from app.models.application import Application
@@ -9,10 +10,13 @@ class CompanyRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Company]:
+    def get_all(self, skip: int = 0, limit: int = 100, q: Optional[str] = None) -> List[Company]:
+        query = self.db.query(Company).filter(Company.deleted_at.is_(None))
+        if q:
+            pattern = f"%{q.strip()}%"
+            query = query.filter(or_(Company.name.ilike(pattern), Company.location.ilike(pattern)))
         return (
-            self.db.query(Company)
-            .filter(Company.deleted_at.is_(None))
+            query
             .order_by(Company.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -33,7 +37,10 @@ class CompanyRepository:
         return (
             self.db.query(Company)
             .filter(
-                Company.updated_by == user_id,
+                or_(
+                    Company.created_by == user_id,
+                    and_(Company.created_by.is_(None), Company.updated_by == user_id)
+                ),
                 Company.deleted_at.is_(None)
             )
             .first()
@@ -50,16 +57,25 @@ class CompanyRepository:
             cro_linkedin=getattr(company_in, 'cro_linkedin', None),
             registration_number=getattr(company_in, 'registration_number', None),
             is_verified=False,
+            created_by=created_by_user_id,
             updated_by=created_by_user_id,
         )
-        self.db.add(company)
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+        try:
+            self.db.add(company)
+            self.db.commit()
+            self.db.refresh(company)
+            return company
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update(self, company: Company, company_in, updater_user_id: Optional[int] = None) -> Company:
         update_data = company_in.dict(exclude_unset=True)
         is_verified = update_data.pop('is_verified', None)
+
+        # Backfill created_by if missing
+        if company.created_by is None and company.updated_by:
+            company.created_by = company.updated_by
 
         # Update remaining data fields
         for field, value in update_data.items():
@@ -70,40 +86,56 @@ class CompanyRepository:
             if is_verified and updater_user_id:
                 company.verified_by = updater_user_id
 
-        # Only update owner/updated_by if updating info fields, not solely verifying
-        if updater_user_id and update_data:
+        # Update audit trail
+        if updater_user_id:
             company.updated_by = updater_user_id
 
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+        try:
+            self.db.commit()
+            self.db.refresh(company)
+            return company
+        except Exception:
+            self.db.rollback()
+            raise
 
     def rename(self, company: Company, new_name: str, updated_by_user_id: int) -> Company:
+        # Backfill created_by if missing
+        if company.created_by is None and company.updated_by:
+            company.created_by = company.updated_by
+
         company.name = new_name
         company.updated_by = updated_by_user_id
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+        try:
+            self.db.commit()
+            self.db.refresh(company)
+            return company
+        except Exception:
+            self.db.rollback()
+            raise
 
     def soft_delete(self, company: Company, deleted_by_user_id: int) -> Company:
         now = datetime.now(timezone.utc)
-        company.deleted_at = now
-        company.deleted_by = deleted_by_user_id
+        try:
+            company.deleted_at = now
+            company.deleted_by = deleted_by_user_id
 
-        # Cascade soft-delete to jobs belonging to this company
-        jobs = self.db.query(Job).filter(Job.company_id == company.company_id, Job.deleted_at.is_(None)).all()
-        job_ids = [j.job_id for j in jobs]
-        for job in jobs:
-            job.deleted_at = now
-            job.deleted_by = deleted_by_user_id
+            # Cascade soft-delete to jobs belonging to this company
+            jobs = self.db.query(Job).filter(Job.company_id == company.company_id, Job.deleted_at.is_(None)).all()
+            job_ids = [j.job_id for j in jobs]
+            for job in jobs:
+                job.deleted_at = now
+                job.deleted_by = deleted_by_user_id
 
-        # Cascade soft-delete to applications for these jobs
-        if job_ids:
-            self.db.query(Application).filter(
-                Application.job_id.in_(job_ids),
-                Application.deleted_at.is_(None)
-            ).update({"deleted_at": now}, synchronize_session=False)
+            # Cascade soft-delete to applications for these jobs
+            if job_ids:
+                self.db.query(Application).filter(
+                    Application.job_id.in_(job_ids),
+                    Application.deleted_at.is_(None)
+                ).update({"deleted_at": now}, synchronize_session=False)
 
-        self.db.commit()
-        self.db.refresh(company)
-        return company
+            self.db.commit()
+            self.db.refresh(company)
+            return company
+        except Exception:
+            self.db.rollback()
+            raise

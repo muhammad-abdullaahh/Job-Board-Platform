@@ -119,28 +119,23 @@ class EmailService:
                 logger.info(f"Password reset email sent via SMTP to {clean_email}")
                 return {
                     "sent": True,
-                    "reset_link": reset_url,
-                    "message": f"Password reset instructions have been sent to {clean_email}."
+                    "message": "If an account with that email exists, password reset instructions have been sent."
                 }
 
             except Exception as e:
                 logger.error(f"Failed to send email via SMTP to {clean_email}: {e}")
-                # Fallback to dev log output so the user is not completely locked out
+                # Safe dev log output on server console only
                 self._log_dev_reset(clean_email, reset_url, error_reason=str(e))
                 return {
                     "sent": False,
-                    "reset_link": reset_url,
-                    "smtp_error": str(e),
-                    "message": f"Could not connect to SMTP server: {e}. You can reset directly with the provided link."
+                    "message": "If an account with that email exists, password reset instructions have been sent."
                 }
 
-        # 2. If SMTP is not configured in .env
+        # 2. If SMTP is not configured in .env (log to server console only for local testing)
         self._log_dev_reset(clean_email, reset_url)
         return {
             "sent": False,
-            "reset_link": reset_url,
-            "smtp_configured": False,
-            "message": f"SMTP is not configured in backend .env. Reset link generated for {clean_email}."
+            "message": "If an account with that email exists, password reset instructions have been sent."
         }
 
     def _log_dev_reset(self, email: str, reset_url: str, error_reason: str = None):
