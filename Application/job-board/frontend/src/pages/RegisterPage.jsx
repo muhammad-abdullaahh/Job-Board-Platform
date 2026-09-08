@@ -83,25 +83,50 @@ export const RegisterPage = () => {
     e.preventDefault();
     setError(null);
 
-    // 1. Password strength validation
-    if (strength.score <= 1) {
-      setError('Password strength is too weak. Please meet at least 3 strength criteria (minimum 8 characters with letters, numbers, and symbols).');
+    const trimmedName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Basic field checks
+    if (!trimmedName) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!cleanEmail) {
+      setError('Please enter a valid email address.');
       return;
     }
 
-    // 2. Confirm password match validation
+    // 2. Password complexity validation matching backend requirements
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter (A-Z).');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter (a-z).');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number (0-9).');
+      return;
+    }
+
+    // 3. Confirm password match validation
     if (password !== confirmPassword) {
       setError('Passwords do not match. Please verify your password confirmation.');
       return;
     }
 
-    // 3. Mandatory Terms & Conditions check
+    // 4. Mandatory Terms & Conditions check
     if (!agreeTerms) {
       setError('You must accept the Terms of Service and Privacy Policy to create an account.');
       return;
     }
 
-    // 4. Mandatory Data Processing Consent check
+    // 5. Mandatory Data Processing Consent check
     if (!agreeDataProcessing) {
       setError('You must consent to candidate recruitment data processing to continue.');
       return;
@@ -110,12 +135,11 @@ export const RegisterPage = () => {
     setIsSubmitting(true);
     try {
       const data = await registerApi({
-        name,
-        email,
+        name: trimmedName,
+        email: cleanEmail,
         password,
         years_of_experience: Number(yearsExperience) || 0,
         bio: bio.trim() || null,
-        is_admin: false,
       });
       loginUser(data);
       navigate('/dashboard');
@@ -126,7 +150,7 @@ export const RegisterPage = () => {
     }
   };
 
-  const isFormIncomplete = isPasswordTooWeak || passwordsMismatch || !agreeTerms || !agreeDataProcessing;
+  const isFormIncomplete = !name.trim() || !email.trim() || !password || !confirmPassword || passwordsMismatch;
 
   return (
     <div className="auth-page register-card" style={{ maxWidth: '520px' }}>

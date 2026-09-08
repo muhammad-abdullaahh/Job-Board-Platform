@@ -20,6 +20,11 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
+
 def validate_password_complexity(v: str) -> str:
     if len(v) < 8:
         raise ValueError("Password must be at least 8 characters long.")
@@ -39,6 +44,19 @@ class UserRegisterRequest(BaseModel):
     password: str
     bio: Optional[str] = None
     years_of_experience: int = 0
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        clean = v.strip()
+        if not clean:
+            raise ValueError("Full name is required.")
+        return clean
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
 
     @field_validator("password")
     @classmethod

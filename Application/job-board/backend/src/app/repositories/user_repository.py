@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from app.models.user import User
 from app.models.company import Company
 from app.models.job import Job
@@ -13,7 +13,10 @@ class UserRepository:
         self.db = db
 
     def get_user_by_email(self, email: str, include_deleted: bool = False) -> Optional[User]:
-        query = self.db.query(User).filter(User.email == email)
+        if not email:
+            return None
+        clean_email = email.strip().lower()
+        query = self.db.query(User).filter(func.lower(User.email) == clean_email)
         if not include_deleted:
             query = query.filter(User.deleted_at.is_(None))
         return query.first()
@@ -44,9 +47,11 @@ class UserRepository:
 
     def create_user(self, user_in, is_admin: bool = False) -> User:
         hashed_pw = get_password_hash(user_in.password)
+        name_val = getattr(user_in, 'name', '')
+        email_val = getattr(user_in, 'email', '')
         user = User(
-            name=user_in.name,
-            email=user_in.email,
+            name=name_val.strip() if isinstance(name_val, str) else name_val,
+            email=email_val.strip().lower() if isinstance(email_val, str) else email_val,
             password=hashed_pw,
             is_admin=is_admin,
             bio=getattr(user_in, 'bio', None),

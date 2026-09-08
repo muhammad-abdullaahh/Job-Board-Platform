@@ -2,6 +2,7 @@ import logging
 from fastapi import Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 logger = logging.getLogger("app.error_handlers")
 
@@ -39,7 +40,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "status": 422,
             "code": "UNPROCESSABLE_ENTITY",
-            "detail": exc.errors(),
+            "detail": jsonable_encoder(exc.errors()),
             "correlation_id": correlation_id,
         },
         headers={"X-Correlation-ID": correlation_id} if correlation_id else {}

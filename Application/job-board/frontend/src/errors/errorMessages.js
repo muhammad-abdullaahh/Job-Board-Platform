@@ -133,6 +133,9 @@ export const getErrorMessage = (err, fallback) => {
             : '';
 
           let msg = item.msg;
+          if (typeof msg === 'string') {
+            msg = msg.replace(/^Value error,\s*/i, '');
+          }
           if (/value is not a valid email/i.test(msg)) {
             msg = 'Please enter a valid email address';
           }
