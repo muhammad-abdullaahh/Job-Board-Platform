@@ -12,6 +12,13 @@ export const AuthProvider = ({ children }) => {
   // Silent token refresh on app startup using httpOnly cookie
   useEffect(() => {
     const initAuth = async () => {
+      // Avoid firing refresh request for guest visitors who haven't logged in
+      const hasSession = localStorage.getItem('has_session') === 'true';
+      if (!hasSession) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const data = await refreshTokenApi();
         if (data && data.access_token) {
@@ -23,8 +30,12 @@ export const AuthProvider = ({ children }) => {
             email: data.email,
             role: data.role,
           });
+          localStorage.setItem('has_session', 'true');
+        } else {
+          localStorage.removeItem('has_session');
         }
       } catch (e) {
+        localStorage.removeItem('has_session');
         setMemoryToken(null);
         setToken(null);
         setUser(null);
@@ -38,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     const handleTokenRefreshed = (e) => {
       const detail = e.detail;
       if (detail && detail.access_token) {
+        localStorage.setItem('has_session', 'true');
         setMemoryToken(detail.access_token);
         setToken(detail.access_token);
         setUser({
@@ -50,6 +62,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const handleAuthLogout = () => {
+      localStorage.removeItem('has_session');
       setMemoryToken(null);
       setToken(null);
       setUser(null);
@@ -66,6 +79,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginUser = (authData) => {
     // authData: { access_token, role, user_id, name, email }
+    localStorage.setItem('has_session', 'true');
     const userObj = {
       user_id: authData.user_id,
       name: authData.name,
@@ -78,6 +92,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logoutUser = async () => {
+    localStorage.removeItem('has_session');
     try {
       await logoutApi();
     } catch (e) {
