@@ -36,7 +36,7 @@ CREATE TYPE application_status_enum AS ENUM (
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     bio TEXT,
@@ -218,8 +218,9 @@ CREATE TABLE job_skills (
 -- PART 3: INDEXES
 -- -----------------------------------------------------------------------------
 
-CREATE INDEX idx_users_email
-    ON users (email);
+CREATE UNIQUE INDEX idx_users_email_active_unique
+    ON users (lower(email))
+    WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_jobs_title
     ON jobs (title);
