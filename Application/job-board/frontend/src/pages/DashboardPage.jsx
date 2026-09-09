@@ -29,6 +29,7 @@ import { CompanyRegisterModal } from '../components/CompanyRegisterModal';
 import { CompanyEditModal } from '../components/CompanyEditModal';
 import { JobCreateModal } from '../components/JobCreateModal';
 import { DeleteAccountModal } from '../components/DeleteAccountModal';
+import { LoadingThrobber } from '../components/LoadingThrobber';
 import { getErrorMessage } from '../errors/errorMessages';
 
 export const DashboardPage = () => {
@@ -417,6 +418,18 @@ export const DashboardPage = () => {
   const filteredSkills = skillsList.filter((s) =>
     s.name && s.name.toLowerCase().includes(skillSearch.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="page-container dashboard-page">
+        <LoadingThrobber
+          fullPage
+          message="Loading"
+          submessage="Preparing your dashboard, applications, and opportunities..."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container dashboard-page">

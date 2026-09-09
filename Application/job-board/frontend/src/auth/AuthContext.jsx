@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { logoutApi, refreshTokenApi } from '../api/authApi';
 import { setMemoryToken } from '../api/axiosClient';
+import { LoadingThrobber } from '../components/LoadingThrobber';
 
 export const AuthContext = createContext(null);
 
@@ -105,7 +106,11 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ token, user, setUser, loginUser, logoutUser, isAuthenticated: !!token, loading }}>
-      {!loading && children}
+      {loading ? (
+        <LoadingThrobber fullPage message="Loading" submessage="Initializing application..." />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchJobDetailApi } from '../api/jobsApi';
 import { ApplicationModal } from '../components/ApplicationModal';
+import { LoadingThrobber } from '../components/LoadingThrobber';
 
 export const JobDetailPage = () => {
   const { jobId } = useParams();
@@ -18,7 +19,17 @@ export const JobDetailPage = () => {
       .catch(() => setLoading(false));
   }, [jobId]);
 
-  if (loading) return <div className="page-container"><p style={{ color: 'var(--text-muted)' }}>Loading job details...</p></div>;
+  if (loading) {
+    return (
+      <div className="page-container job-detail-page">
+        <LoadingThrobber
+          fullPage
+          message="Loading"
+          submessage="Retrieving position information and company details..."
+        />
+      </div>
+    );
+  }
   if (!job) return <div className="page-container"><p style={{ color: 'var(--error)' }}>Job details not found.</p></div>;
 
   const companyName = job.company?.name || job.company_name || 'Top Employer';

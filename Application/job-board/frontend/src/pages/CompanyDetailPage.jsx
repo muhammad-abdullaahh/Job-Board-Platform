@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { fetchCompanyDetailApi } from '../api/companiesApi';
 import { fetchJobsApi } from '../api/jobsApi';
 import { JobCard } from '../components/JobCard';
+import { LoadingThrobber } from '../components/LoadingThrobber';
 
 export const CompanyDetailPage = () => {
   const { companyId } = useParams();
@@ -21,7 +22,17 @@ export const CompanyDetailPage = () => {
     });
   }, [companyId]);
 
-  if (loading) return <div className="page-container"><p style={{ color: 'var(--text-muted)' }}>Loading company profile...</p></div>;
+  if (loading) {
+    return (
+      <div className="page-container company-detail-page">
+        <LoadingThrobber
+          fullPage
+          message="Loading"
+          submessage="Retrieving company profile and active job openings..."
+        />
+      </div>
+    );
+  }
   if (!company) return <div className="page-container"><p style={{ color: 'var(--error)' }}>Company profile not found.</p></div>;
 
   return (
