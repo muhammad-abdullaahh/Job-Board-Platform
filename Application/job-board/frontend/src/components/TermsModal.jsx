@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { X, ShieldCheck, FileText, Lock } from 'lucide-react';
 
 export const TermsModal = ({ isOpen, initialTab = 'terms', onClose, onAccept }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const backdropRef = useRef(null);
+  const bodyRef = useRef(null);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (backdropRef.current) backdropRef.current.scrollTop = 0;
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
 
   if (!isOpen) return null;
 
   const modalNode = (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose} ref={backdropRef}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
@@ -139,6 +164,7 @@ export const TermsModal = ({ isOpen, initialTab = 'terms', onClose, onAccept }) 
 
         {/* Scrollable Content Body */}
         <div
+          ref={bodyRef}
           style={{
             padding: '1.5rem',
             overflowY: 'auto',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { deleteMyAccountApi } from '../api/usersApi';
 import { getErrorMessage } from '../errors/errorMessages';
@@ -8,6 +8,28 @@ export const DeleteAccountModal = ({ isOpen, onClose, onAccountDeleted }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
+
+  const backdropRef = useRef(null);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (backdropRef.current) backdropRef.current.scrollTop = 0;
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (error && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [error]);
 
   if (!isOpen) return null;
 
@@ -34,6 +56,7 @@ export const DeleteAccountModal = ({ isOpen, onClose, onAccountDeleted }) => {
 
   return (
     <div
+      ref={backdropRef}
       className="modal-backdrop"
       onClick={onClose}
       style={{
@@ -49,6 +72,7 @@ export const DeleteAccountModal = ({ isOpen, onClose, onAccountDeleted }) => {
       }}
     >
       <div
+        ref={contentRef}
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{

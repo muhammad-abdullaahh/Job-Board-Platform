@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createCompanyApi } from '../api/companiesApi';
 import { getErrorMessage } from '../errors/errorMessages';
 
@@ -13,6 +13,26 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const backdropRef = useRef(null);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (backdropRef.current) backdropRef.current.scrollTop = 0;
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (error && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [error]);
 
   const formatUrl = (urlStr) => {
     if (!urlStr || !urlStr.trim()) return null;
@@ -48,8 +68,8 @@ export const CompanyRegisterModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+    <div className="modal-backdrop" onClick={onClose} ref={backdropRef}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }} ref={contentRef}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <div>
             <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0, color: 'var(--primary)' }}>Register Organization Profile</h2>

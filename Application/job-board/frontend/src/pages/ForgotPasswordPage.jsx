@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPasswordApi } from '../api/authApi';
 import { getErrorMessage } from '../errors/errorMessages';
@@ -10,6 +10,10 @@ export const ForgotPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [resetData, setResetData] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

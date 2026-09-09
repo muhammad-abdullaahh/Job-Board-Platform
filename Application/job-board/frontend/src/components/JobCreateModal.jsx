@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createJobApi, updateJobApi } from '../api/jobsApi';
 import { fetchSkillsApi } from '../api/skillsApi';
 import { getErrorMessage } from '../errors/errorMessages';
@@ -14,6 +14,26 @@ export const JobCreateModal = ({ companyId, jobToEdit = null, onClose, onSuccess
   const [selectedSkills, setSelectedSkills] = useState(jobToEdit?.skills?.map((s) => s.skill_id) || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const backdropRef = useRef(null);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    if (backdropRef.current) backdropRef.current.scrollTop = 0;
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [jobToEdit]);
+
+  useEffect(() => {
+    if (error && contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [error]);
 
   useEffect(() => {
     fetchSkillsApi()
@@ -66,8 +86,8 @@ export const JobCreateModal = ({ companyId, jobToEdit = null, onClose, onSuccess
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+    <div className="modal-backdrop" onClick={onClose} ref={backdropRef}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }} ref={contentRef}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
           <div>
             <h2 style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.45rem)', margin: 0 }}>

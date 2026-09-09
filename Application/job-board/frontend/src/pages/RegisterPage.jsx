@@ -64,6 +64,10 @@ export const RegisterPage = () => {
   const { loginUser } = useAuth();
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const strength = calculatePasswordStrength(password);
   const isPasswordTooWeak = password.length > 0 && strength.score <= 1;
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
