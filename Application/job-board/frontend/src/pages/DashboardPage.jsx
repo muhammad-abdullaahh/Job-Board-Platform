@@ -83,19 +83,40 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [actionMessage, setActionMessage] = useState(null);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+  const loadDashboardData = async (isInitial = false) => {
+    // Only show full-page loading throbber on initial mount if data has not yet been loaded
+    if (isInitial || (!companies.length && !applications.length)) {
+      setLoading(true);
+    }
     try {
-      // 1. Load candidate applications
-      const appsData = await fetchMyApplicationsApi().catch(() => []);
+      const isUserAdmin = user && (user.is_admin || user.role === 'admin');
+
+      // 1. Fetch all independent resources simultaneously in parallel
+      const [
+        appsData,
+        compsData,
+        profileData,
+        allSkills,
+        myCompData,
+        adminResults
+      ] = await Promise.all([
+        fetchMyApplicationsApi().catch(() => []),
+        fetchCompaniesApi().catch(() => []),
+        fetchUserProfileApi().catch(() => null),
+        fetchSkillsApi().catch(() => []),
+        (user && user.user_id) ? fetchMyCompanyApi().catch(() => null) : Promise.resolve(null),
+        isUserAdmin ? Promise.all([
+          fetchUsersApi().catch(() => []),
+          fetchAdminAnalyticsApi().catch(() => null),
+          fetchAdminJobsApi().catch(() => []),
+        ]) : Promise.resolve([[], null, []])
+      ]);
+
+      // 2. Set state immediately from concurrent responses
       setApplications(appsData || []);
-
-      // 2. Load companies
-      const compsData = await fetchCompaniesApi().catch(() => []);
       setCompanies(compsData || []);
+      setSkillsList(allSkills || []);
 
-      // 3. Load user personal profile & attached skills
-      const profileData = await fetchUserProfileApi().catch(() => null);
       if (profileData) {
         setProfileForm({
           name: profileData.name || '',
@@ -105,14 +126,17 @@ export const DashboardPage = () => {
         });
       }
 
-      // 4. Load predefined platform skills for candidate tagging and admin taxonomy
-      const allSkills = await fetchSkillsApi().catch(() => []);
-      setSkillsList(allSkills || []);
+      if (isUserAdmin) {
+        const [usersData, analyticsData, jobsData] = adminResults;
+        setUsersList(usersData || []);
+        setAnalytics(analyticsData);
+        setAdminJobs(jobsData || []);
+      }
 
-      // 5. Find company owned by logged in user
+      // 3. Resolve user's company and fetch associated jobs
       if (user && user.user_id) {
-        let found = await fetchMyCompanyApi().catch(() => null);
-        if (!found && compsData.length) {
+        let found = myCompData;
+        if (!found && compsData && compsData.length) {
           found = compsData.find((c) => c.updated_by === user.user_id || c.created_by === user.user_id || c.owner_user_id === user.user_id);
         }
         setMyCompany(found || null);
@@ -122,18 +146,6 @@ export const DashboardPage = () => {
           setMyJobs(companyJobs || []);
         }
       }
-
-      // 6. Load users list, analytics, and all jobs if user is Admin
-      if (user && (user.is_admin || user.role === 'admin')) {
-        const [usersData, analyticsData, jobsData] = await Promise.all([
-          fetchUsersApi().catch(() => []),
-          fetchAdminAnalyticsApi().catch(() => null),
-          fetchAdminJobsApi().catch(() => []),
-        ]);
-        setUsersList(usersData || []);
-        setAnalytics(analyticsData);
-        setAdminJobs(jobsData || []);
-      }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -142,8 +154,10 @@ export const DashboardPage = () => {
   };
 
   useEffect(() => {
-    loadDashboardData();
-  }, [user]);
+    if (user?.user_id) {
+      loadDashboardData(true);
+    }
+  }, [user?.user_id]);
 
   const handleVerifyCompany = async (companyId) => {
     try {
