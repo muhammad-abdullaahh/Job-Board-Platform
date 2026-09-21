@@ -1,13 +1,19 @@
 from datetime import datetime, timezone
-from typing import List, Union
+from typing import List, Optional
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.job_repository import JobRepository
+from app.repositories.user_repository import UserRepository
 from app.models.application import Application, ApplicationStatus
 from app.models.job import JobStatus
-from app.schemas.application_schema import ApplicationResponse
-from app.repositories.user_repository import UserRepository
+from app.exceptions import (
+    ApplicationNotFoundException,
+    DuplicateApplicationException,
+    JobNotFoundException,
+    JobNotOpenException,
+    InvalidStatusTransitionException,
+    ForbiddenException,
+)
 from app.utils.cache import api_cache
 
 VALID_TRANSITIONS = {
@@ -46,36 +52,45 @@ class ApplicationService:
     def apply_to_job(self, user_id: int, app_in) -> Application:
         job = self.job_repo.get_by_id(app_in.job_id)
         if not job:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Job #{app_in.job_id} not found."
-            )
+            raise JobNotFoundException(app_in.job_id)
 
         if job.status != JobStatus.open:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Applications are closed for this position."
-            )
+            raise JobNotOpenException()
 
         existing = self.app_repo.get_user_application_for_job(user_id, app_in.job_id)
         if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You have already submitted an application for this job."
-            )
+            raise DuplicateApplicationException()
 
         return self.app_repo.create(user_id, app_in)
 
-    def get_my_applications(self, user_id: int) -> List[Application]:
-        return self.app_repo.get_user_applications(user_id)
+    def get_my_applications(
+        self,
+        user_id: int,
+        status: Optional[ApplicationStatus] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: str = "-created_at"
+    ) -> List[Application]:
+        return self.app_repo.get_user_applications(
+            user_id=user_id,
+            status=status,
+            skip=skip,
+            limit=limit,
+            sort=sort
+        )
 
-    def get_job_applications(self, job_id: int, requesting_user_id: int) -> List[Application]:
+    def get_job_applications(
+        self,
+        job_id: int,
+        requesting_user_id: int,
+        status: Optional[ApplicationStatus] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: str = "-created_at"
+    ) -> List[Application]:
         job = self.job_repo.get_by_id(job_id)
         if not job:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Job #{job_id} not found."
-            )
+            raise JobNotFoundException(job_id)
 
         user = self.user_repo.get_user_by_id(requesting_user_id)
         is_admin = user.is_admin if user else False
@@ -85,12 +100,15 @@ class ApplicationService:
         )
 
         if not is_admin and not is_company_owner:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied. Only the employer who posted this job can view applicant details."
-            )
+            raise ForbiddenException("Access denied. Only the employer who posted this job can view applicant details.")
 
-        return self.app_repo.get_job_applications(job_id)
+        return self.app_repo.get_job_applications(
+            job_id=job_id,
+            status=status,
+            skip=skip,
+            limit=limit,
+            sort=sort
+        )
 
     def update_application_status(
         self,
@@ -100,10 +118,7 @@ class ApplicationService:
     ) -> Application:
         app = self.app_repo.get_by_id(application_id)
         if not app:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Application #{application_id} not found."
-            )
+            raise ApplicationNotFoundException(application_id)
 
         user = self.user_repo.get_user_by_id(updater_user_id)
         is_admin = user.is_admin if user else False
@@ -117,37 +132,34 @@ class ApplicationService:
         if new_status != app.status:
             allowed = VALID_TRANSITIONS.get(app.status, set())
             if new_status not in allowed and not is_admin:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid status transition from '{app.status.value}' to '{new_status.value}'."
-                )
+                raise InvalidStatusTransitionException(from_status=app.status.value, to_status=new_status.value)
 
         # 2. Candidate offer response authorization
         if new_status in [ApplicationStatus.offer_accepted, ApplicationStatus.offer_declined]:
             if not is_applicant and not is_admin:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied. Only the applicant candidate can respond to this job offer."
-                )
+                raise ForbiddenException("Access denied. Only the applicant candidate can respond to this job offer.")
         # 3. Employer candidate evaluation authorization
         else:
             if not is_company_owner and not is_admin:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied. Only the hiring employer who posted this job can manage candidate application statuses."
-                )
+                raise ForbiddenException("Access denied. Only the hiring employer who posted this job can manage candidate application statuses.")
 
-        # 4. Handle candidate offer acceptance -> Persist application acceptance and close job posting
+        # 4. Handle candidate offer acceptance -> Multi-write atomic transaction (Plan Spec #14)
         if new_status == ApplicationStatus.offer_accepted:
-            updated_app = self.app_repo.update_status(app, new_status, updater_user_id)
-            job = self.job_repo.get_any_by_id(app.job_id)
-            if job:
-                job.status = JobStatus.closed
-                job.updated_at = datetime.now(timezone.utc)
-                job.updated_by = updater_user_id
+            try:
+                updated_app = self.app_repo.update_status(app, new_status, updater_user_id, commit=False)
+                job = self.job_repo.get_any_by_id(app.job_id)
+                if job:
+                    job.status = JobStatus.closed
+                    job.updated_at = datetime.now(timezone.utc)
+                    job.updated_by = updater_user_id
                 self.db.commit()
-                self.db.refresh(job)
-            api_cache.clear_prefix("jobs:")
-            return updated_app
+                self.db.refresh(app)
+                if job:
+                    self.db.refresh(job)
+                api_cache.clear_prefix("jobs:")
+                return updated_app
+            except Exception:
+                self.db.rollback()
+                raise
 
-        return self.app_repo.update_status(app, new_status, updater_user_id)
+        return self.app_repo.update_status(app, new_status, updater_user_id, commit=True)

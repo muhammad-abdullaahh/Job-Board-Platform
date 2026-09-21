@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import or_
+from sqlalchemy import text
 from app.models.job import Job, JobStatus, EmploymentType
 from app.models.skill import Skill
 
@@ -58,46 +58,100 @@ class JobRepository:
         min_salary: Optional[int] = None,
         company_id: Optional[int] = None,
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 20,
+        sort: Optional[str] = None,
         sort_by: Optional[str] = "created_at",
         order: Optional[str] = "desc"
     ) -> List[Job]:
-        q = (
+        """
+        Multi-field job filtering executed via parameterized Raw SQL (Plan Spec #10).
+        Supports single sort parameter (e.g. ?sort=-created_at, ?sort=salary_min) as per Spec #18,
+        with backward compatibility for sort_by & order.
+        """
+        # Determine sorting column and direction
+        sort_col = "created_at"
+        sort_dir = "DESC"
+
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                sort_dir = "DESC"
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                sort_dir = "ASC"
+            else:
+                sort_col = clean_sort
+                sort_dir = "ASC"
+        elif sort_by:
+            sort_col = sort_by
+            sort_dir = "ASC" if order and order.lower() == "asc" else "DESC"
+
+        allowed_sort_fields = {
+            "created_at": "created_at",
+            "salary_max": "salary_max",
+            "salary_min": "salary_min",
+            "title": "title",
+            "salary": "salary_max",
+        }
+        safe_sort_col = allowed_sort_fields.get(sort_col, "created_at")
+
+        # Build parameterized Raw SQL WHERE clause
+        conditions = ["deleted_at IS NULL"]
+        params: dict = {"limit": limit, "skip": skip}
+
+        if status:
+            status_val = status.value if hasattr(status, "value") else str(status)
+            conditions.append("status = :status")
+            params["status"] = status_val
+
+        if company_id:
+            conditions.append("company_id = :company_id")
+            params["company_id"] = company_id
+
+        if employment_type:
+            emp_val = employment_type.value if hasattr(employment_type, "value") else str(employment_type)
+            conditions.append("employment_type = :employment_type")
+            params["employment_type"] = emp_val
+
+        if location:
+            conditions.append("LOWER(location) LIKE LOWER(:location)")
+            params["location"] = f"%{location}%"
+
+        if min_salary is not None:
+            conditions.append("salary_max >= :min_salary")
+            params["min_salary"] = min_salary
+
+        if query:
+            conditions.append("(LOWER(title) LIKE LOWER(:query) OR LOWER(description) LIKE LOWER(:query))")
+            params["query"] = f"%{query}%"
+
+        where_sql = " AND ".join(conditions)
+        raw_sql = f"""
+            SELECT job_id
+            FROM jobs
+            WHERE {where_sql}
+            ORDER BY {safe_sort_col} {sort_dir}
+            LIMIT :limit OFFSET :skip
+        """
+
+        result = self.db.execute(text(raw_sql), params)
+        job_ids = [row[0] for row in result.fetchall()]
+        if not job_ids:
+            return []
+
+        # Hydrate matching jobs with eager-loaded relations, preserving order
+        jobs = (
             self.db.query(Job)
             .options(
                 joinedload(Job.company),
                 selectinload(Job.skills)
             )
-            .filter(Job.deleted_at.is_(None))
+            .filter(Job.job_id.in_(job_ids))
+            .all()
         )
-
-        if status:
-            q = q.filter(Job.status == status)
-        if company_id:
-            q = q.filter(Job.company_id == company_id)
-        if employment_type:
-            q = q.filter(Job.employment_type == employment_type)
-        if location:
-            q = q.filter(Job.location.ilike(f"%{location}%"))
-        if min_salary is not None:
-            q = q.filter(Job.salary_max >= min_salary)
-        if query:
-            pattern = f"%{query}%"
-            q = q.filter(or_(Job.title.ilike(pattern), Job.description.ilike(pattern)))
-
-        allowed_sort_fields = {
-            "created_at": Job.created_at,
-            "salary_max": Job.salary_max,
-            "salary_min": Job.salary_min,
-            "title": Job.title
-        }
-        sort_col = allowed_sort_fields.get(sort_by, Job.created_at)
-        if order and order.lower() == "asc":
-            q = q.order_by(sort_col.asc())
-        else:
-            q = q.order_by(sort_col.desc())
-
-        return q.offset(skip).limit(limit).all()
+        job_map = {j.job_id: j for j in jobs}
+        return [job_map[jid] for jid in job_ids if jid in job_map]
 
     def create(self, job_in, user_id: Optional[int] = None) -> Job:
         job = Job(

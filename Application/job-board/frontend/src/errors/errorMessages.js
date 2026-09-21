@@ -21,6 +21,28 @@ export const ERROR_MESSAGES = {
 };
 
 /**
+ * Machine-readable backend error code to user-facing message mapping (Plan Spec #13).
+ * Gives the frontend full control over wording, tone, and localization.
+ */
+export const ERROR_CODE_MAPPINGS = {
+  USER_NOT_FOUND: 'No user account found with that email address. Please check your credentials or register.',
+  USER_ALREADY_EXISTS: 'An account with this email address already exists. Please log in or use another email.',
+  INVALID_CREDENTIALS: 'The email or password you entered is incorrect. Please try again.',
+  ACCOUNT_SUSPENDED: 'Your account has been deactivated or suspended. Please contact support.',
+  FORBIDDEN_ACTION: 'You do not have permission to perform this action.',
+  UNAUTHORIZED: 'Your session has expired or you are not logged in. Please log in again.',
+  JOB_NOT_FOUND: 'The requested job posting could not be found or has been removed.',
+  COMPANY_NOT_FOUND: 'The organization profile could not be found.',
+  JOB_NOT_OPEN: 'This job posting is closed and no longer accepting applications.',
+  APPLICATION_ALREADY_EXISTS: 'You have already submitted an application for this job posting.',
+  APPLICATION_NOT_FOUND: 'The requested application could not be found.',
+  INVALID_STATUS_TRANSITION: 'This application cannot be moved to that status at this stage.',
+  OFFER_EXPIRED: 'The 48-hour response window for this job offer has expired.',
+  INVALID_SALARY_RANGE: 'Minimum salary cannot be greater than maximum salary.',
+  COMPANY_NOT_VERIFIED: 'Your company profile is pending administrator verification. Job postings will activate once approved.',
+};
+
+/**
  * Regex pattern identifying technical implementation details, stack traces,
  * server internals, framework identifiers, and local URLs that must NEVER be
  * exposed to end users.
@@ -102,6 +124,12 @@ export const getErrorMessage = (err, fallback) => {
   // 2. Network connectivity / server unreachable
   if (isNetworkError(err)) {
     return ERROR_MESSAGES.NETWORK_ERROR;
+  }
+
+  // 2b. Check machine-readable error_code mapping from backend (Plan Spec #13)
+  const backendCode = err.response?.data?.code;
+  if (backendCode && ERROR_CODE_MAPPINGS[backendCode]) {
+    return ERROR_CODE_MAPPINGS[backendCode];
   }
 
   // 3. HTTP 502 / 503 / 504 Gateway / Service Unavailable

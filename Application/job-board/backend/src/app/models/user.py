@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.database import Base
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index, CheckConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.skill import user_skills
@@ -37,9 +37,11 @@ class User(Base):
             unique=True,
             postgresql_where=(deleted_at.is_(None)),
         ),
+        CheckConstraint("years_experience >= 0", name="chk_user_years_experience"),
     )
 
     # Relationships
     skills = relationship("Skill", secondary=user_skills, back_populates="users")
     applications = relationship("Application", foreign_keys="[Application.user_id]", back_populates="applicant", cascade="all, delete-orphan")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 

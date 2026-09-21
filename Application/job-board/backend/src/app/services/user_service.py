@@ -23,7 +23,7 @@ class UserService:
     def get_all_users(
         self,
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 20,
         q: Optional[str] = None,
         is_admin: Optional[bool] = None
     ) -> List[User]:
@@ -33,6 +33,20 @@ class UserService:
             limit=limit,
             q=q,
             is_admin=is_admin
+        )
+
+    def search_job_seekers(
+        self,
+        skill_ids: Optional[List[int]] = None,
+        min_experience: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[User]:
+        return self.user_repo.search_job_seekers_by_skills(
+            skill_ids=skill_ids or [],
+            min_experience=min_experience,
+            skip=skip,
+            limit=limit
         )
 
     def update_user_profile(self, user: User, user_in) -> User:

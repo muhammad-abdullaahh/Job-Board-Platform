@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload
 from app.models.application import Application, ApplicationStatus
 from app.models.job import Job
 from app.models.user import User
@@ -40,29 +40,57 @@ class ApplicationRepository:
             .first()
         )
 
-    def get_user_applications(self, user_id: int) -> List[Application]:
-        return (
+    def get_user_applications(
+        self,
+        user_id: int,
+        status: Optional[ApplicationStatus] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: str = "-created_at"
+    ) -> List[Application]:
+        q = (
             self.db.query(Application)
             .options(*self._eager_options())
             .filter(
                 Application.user_id == user_id,
                 Application.deleted_at.is_(None)
             )
-            .order_by(Application.created_at.desc())
-            .all()
         )
+        if status:
+            q = q.filter(Application.status == status)
 
-    def get_job_applications(self, job_id: int) -> List[Application]:
-        return (
+        if sort and sort.strip() == "created_at":
+            q = q.order_by(Application.created_at.asc())
+        else:
+            q = q.order_by(Application.created_at.desc())
+
+        return q.offset(skip).limit(limit).all()
+
+    def get_job_applications(
+        self,
+        job_id: int,
+        status: Optional[ApplicationStatus] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: str = "-created_at"
+    ) -> List[Application]:
+        q = (
             self.db.query(Application)
             .options(*self._eager_options())
             .filter(
                 Application.job_id == job_id,
                 Application.deleted_at.is_(None)
             )
-            .order_by(Application.created_at.desc())
-            .all()
         )
+        if status:
+            q = q.filter(Application.status == status)
+
+        if sort and sort.strip() == "created_at":
+            q = q.order_by(Application.created_at.asc())
+        else:
+            q = q.order_by(Application.created_at.desc())
+
+        return q.offset(skip).limit(limit).all()
 
     def create(self, user_id: int, app_in) -> Application:
         application = Application(
@@ -85,7 +113,8 @@ class ApplicationRepository:
         self,
         application: Application,
         status: ApplicationStatus,
-        updater_user_id: Optional[int] = None
+        updater_user_id: Optional[int] = None,
+        commit: bool = True
     ) -> Application:
         application.status = status
         if updater_user_id:
@@ -97,10 +126,14 @@ class ApplicationRepository:
             application.offer_issued_at = now
             application.offer_expires_at = now + timedelta(hours=48)
 
-        try:
-            self.db.commit()
-            self.db.refresh(application)
+        if commit:
+            try:
+                self.db.commit()
+                self.db.refresh(application)
+                return application
+            except Exception:
+                self.db.rollback()
+                raise
+        else:
+            self.db.flush()
             return application
-        except Exception:
-            self.db.rollback()
-            raise

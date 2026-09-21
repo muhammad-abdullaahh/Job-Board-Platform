@@ -1,9 +1,10 @@
-from typing import List
-from fastapi import APIRouter, Depends, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.models.application import ApplicationStatus
 from app.services.application_service import ApplicationService
 from app.schemas.application_schema import ApplicationCreate, ApplicationStatusUpdate, ApplicationResponse
 
@@ -20,20 +21,41 @@ def apply_to_job(
 
 @router.get("/me", response_model=List[ApplicationResponse])
 def get_my_applications(
+    status: Optional[ApplicationStatus] = Query(None, description="Filter applications by status (Plan Spec #18)"),
+    skip: int = 0,
+    limit: int = Query(20, le=100, ge=1, description="Pagination limit (default 20, max 100)"),
+    sort: str = Query("-created_at", description="Sort parameter (default newest first: -created_at)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.get_my_applications(user_id=current_user.user_id)
+    return service.get_my_applications(
+        user_id=current_user.user_id,
+        status=status,
+        skip=skip,
+        limit=limit,
+        sort=sort
+    )
 
 @router.get("/job/{job_id}", response_model=List[ApplicationResponse])
 def get_job_applications(
     job_id: int,
+    status: Optional[ApplicationStatus] = Query(None, description="Filter candidate applications by status (Plan Spec #18)"),
+    skip: int = 0,
+    limit: int = Query(20, le=100, ge=1, description="Pagination limit (default 20, max 100)"),
+    sort: str = Query("-created_at", description="Sort parameter (default newest first: -created_at)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     service = ApplicationService(db)
-    return service.get_job_applications(job_id=job_id, requesting_user_id=current_user.user_id)
+    return service.get_job_applications(
+        job_id=job_id,
+        requesting_user_id=current_user.user_id,
+        status=status,
+        skip=skip,
+        limit=limit,
+        sort=sort
+    )
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
 def update_application_status(

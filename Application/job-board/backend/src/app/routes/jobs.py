@@ -21,13 +21,14 @@ def search_jobs(
     min_salary: Optional[int] = Query(None),
     company_id: Optional[int] = Query(None),
     skip: int = 0,
-    limit: int = 100,
-    sort_by: Optional[str] = Query("created_at", description="Sort by field (created_at, salary_max, salary_min, title)"),
-    order: Optional[str] = Query("desc", description="Sort direction (asc, desc)"),
+    limit: int = Query(20, le=100, ge=1, description="Number of items to return (default 20, max 100)"),
+    sort: Optional[str] = Query(None, description="Single sort parameter, prefix with - for desc (e.g. -created_at, salary_min)"),
+    sort_by: Optional[str] = Query("created_at", description="Legacy sort field"),
+    order: Optional[str] = Query("desc", description="Legacy sort direction (asc, desc)"),
     db: Session = Depends(get_db)
 ):
     response.headers["Cache-Control"] = "public, max-age=15, stale-while-revalidate=45"
-    cache_key = f"jobs:list:{q}:{location}:{employment_type}:{status}:{min_salary}:{company_id}:{skip}:{limit}:{sort_by}:{order}"
+    cache_key = f"jobs:list:{q}:{location}:{employment_type}:{status}:{min_salary}:{company_id}:{skip}:{limit}:{sort}:{sort_by}:{order}"
     cached = api_cache.get(cache_key)
     if cached is not None:
         response.headers["X-Cache"] = "HIT"
@@ -43,6 +44,7 @@ def search_jobs(
         company_id=company_id,
         skip=skip,
         limit=limit,
+        sort=sort,
         sort_by=sort_by,
         order=order,
     )

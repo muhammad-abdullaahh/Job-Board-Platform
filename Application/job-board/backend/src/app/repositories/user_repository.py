@@ -33,7 +33,7 @@ class UserRepository:
         self,
         include_deleted: bool = True,
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 20,
         q: Optional[str] = None,
         is_admin: Optional[bool] = None
     ) -> List[User]:
@@ -46,6 +46,57 @@ class UserRepository:
             pattern = f"%{q.strip()}%"
             query = query.filter(or_(User.name.ilike(pattern), User.email.ilike(pattern)))
         return query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
+
+    def search_job_seekers_by_skills(
+        self,
+        skill_ids: List[int],
+        min_experience: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[User]:
+        """
+        Search job seekers matching specific technical skills using parameterized Raw SQL (Plan Spec #10).
+        """
+        from sqlalchemy import text
+        from sqlalchemy.orm import selectinload
+
+        conditions = ["u.deleted_at IS NULL", "(u.is_admin = FALSE OR u.is_admin = 0)"]
+        params: dict = {"limit": limit, "skip": skip}
+
+        if min_experience is not None:
+            conditions.append("u.years_experience >= :min_exp")
+            params["min_exp"] = min_experience
+
+        join_clause = ""
+        if skill_ids:
+            placeholders = [f":s_{i}" for i in range(len(skill_ids))]
+            for i, sid in enumerate(skill_ids):
+                params[f"s_{i}"] = sid
+            join_clause = "JOIN user_skills us ON u.user_id = us.user_id"
+            conditions.append(f"us.skill_id IN ({', '.join(placeholders)})")
+
+        where_sql = " AND ".join(conditions)
+        raw_sql = f"""
+            SELECT DISTINCT u.user_id
+            FROM users u
+            {join_clause}
+            WHERE {where_sql}
+            ORDER BY u.user_id DESC
+            LIMIT :limit OFFSET :skip
+        """
+        result = self.db.execute(text(raw_sql), params)
+        user_ids = [row[0] for row in result.fetchall()]
+        if not user_ids:
+            return []
+
+        users = (
+            self.db.query(User)
+            .options(selectinload(User.skills))
+            .filter(User.user_id.in_(user_ids))
+            .all()
+        )
+        user_map = {u.user_id: u for u in users}
+        return [user_map[uid] for uid in user_ids if uid in user_map]
 
     def create_user(self, user_in, is_admin: bool = False) -> User:
         hashed_pw = get_password_hash(user_in.password)

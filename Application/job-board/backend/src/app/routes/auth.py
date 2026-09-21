@@ -43,9 +43,8 @@ def register_user(
     _rate: None = Depends(register_rate_limiter)
 ):
     service = AuthService(db)
-    token_res = service.register_user(user_in)
-    if token_res.refresh_token:
-        set_refresh_cookie(response, token_res.refresh_token)
+    token_res, raw_refresh = service.register_user(user_in)
+    set_refresh_cookie(response, raw_refresh)
     return token_res
 
 @router.post("/login", response_model=Token)
@@ -56,9 +55,8 @@ def login(
     _rate: None = Depends(login_rate_limiter)
 ):
     service = AuthService(db)
-    token_res = service.login(login_in)
-    if token_res.refresh_token:
-        set_refresh_cookie(response, token_res.refresh_token)
+    token_res, raw_refresh = service.login(login_in)
+    set_refresh_cookie(response, raw_refresh)
     return token_res
 
 @router.post("/refresh", response_model=Token)
@@ -70,13 +68,21 @@ def refresh_token(
 ):
     cookie_token = refresh_token or request.cookies.get("refresh_token")
     service = AuthService(db)
-    token_res = service.refresh_access_token(cookie_token)
-    if token_res.refresh_token:
-        set_refresh_cookie(response, token_res.refresh_token)
+    token_res, raw_refresh = service.refresh_access_token(cookie_token)
+    set_refresh_cookie(response, raw_refresh)
     return token_res
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-def logout(response: Response):
+def logout(
+    response: Response,
+    request: Request,
+    refresh_token: str = Cookie(None),
+    db: Session = Depends(get_db)
+):
+    cookie_token = refresh_token or request.cookies.get("refresh_token")
+    service = AuthService(db)
+    service.logout(cookie_token)
+
     is_prod = settings.ENVIRONMENT.lower() == "production" or settings.COOKIE_SECURE
     samesite = "none" if is_prod else settings.COOKIE_SAMESITE
     secure = True if is_prod else settings.COOKIE_SECURE

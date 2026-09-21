@@ -22,7 +22,7 @@ def list_companies(
     response: Response,
     q: Optional[str] = Query(None, description="Search company by name or location"),
     skip: int = 0,
-    limit: int = 100,
+    limit: int = Query(20, le=100, ge=1, description="Number of items to return (default 20, max 100)"),
     db: Session = Depends(get_db)
 ):
     response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"

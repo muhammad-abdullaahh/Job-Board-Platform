@@ -6,7 +6,7 @@ from app.dependencies.auth import get_current_user
 from app.dependencies.roles import require_admin
 from app.models.user import User
 from app.services.user_service import UserService
-from app.repositories.skill_repository import SkillRepository
+from app.services.skill_service import SkillService
 from app.schemas.user_schema import (
     UserResponse,
     UserUpdate,
@@ -58,10 +58,22 @@ def delete_own_account_post_alias(
         "message": "Your account has been deleted successfully."
     }
 
+@router.get("/search-candidates", response_model=List[UserResponse])
+def search_job_seekers(
+    skill_id: Optional[List[int]] = Query(None, description="Skill IDs to match"),
+    min_experience: Optional[int] = Query(None, description="Minimum years of experience"),
+    skip: int = 0,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = UserService(db)
+    return service.search_job_seekers(skill_ids=skill_id, min_experience=min_experience, skip=skip, limit=limit)
+
 @router.get("", response_model=List[UserResponse])
 def get_all_users(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 20,
     q: Optional[str] = Query(None, description="Search users by name or email"),
     is_admin: Optional[bool] = Query(None, description="Filter users by admin role"),
     db: Session = Depends(get_db),
@@ -111,8 +123,8 @@ def restore_user(
 
 @router.get("/skills", response_model=List[SkillResponse], tags=["Skills"])
 def get_all_skills(db: Session = Depends(get_db)):
-    repo = SkillRepository(db)
-    return repo.get_all()
+    service = SkillService(db)
+    return service.get_all()
 
 @router.post("/skills", response_model=SkillResponse, status_code=status.HTTP_201_CREATED, tags=["Skills"])
 def create_skill(
@@ -120,14 +132,8 @@ def create_skill(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    repo = SkillRepository(db)
-    existing = repo.get_by_name(skill_in.name)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Skill '{skill_in.name}' already exists."
-        )
-    return repo.create(name=skill_in.name, created_by_user_id=admin.user_id)
+    service = SkillService(db)
+    return service.create_skill(name=skill_in.name, created_by_user_id=admin.user_id)
 
 @router.put("/skills/{skill_id}", response_model=SkillResponse, tags=["Skills"])
 def update_skill(
@@ -136,20 +142,8 @@ def update_skill(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    repo = SkillRepository(db)
-    skill = repo.get_by_id(skill_id)
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill #{skill_id} not found."
-        )
-    existing = repo.get_by_name(skill_in.name)
-    if existing and existing.skill_id != skill_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Skill '{skill_in.name}' already exists."
-        )
-    return repo.update(skill, skill_in.name)
+    service = SkillService(db)
+    return service.update_skill(skill_id=skill_id, new_name=skill_in.name)
 
 @router.delete("/skills/{skill_id}", status_code=status.HTTP_200_OK, tags=["Skills"])
 def delete_skill(
@@ -157,14 +151,7 @@ def delete_skill(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    repo = SkillRepository(db)
-    skill = repo.get_by_id(skill_id)
-    if not skill:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Skill #{skill_id} not found."
-        )
-    name = skill.name
-    repo.delete(skill)
+    service = SkillService(db)
+    name = service.delete_skill(skill_id)
     api_cache.clear_prefix("jobs:")
     return {"message": f"Skill '{name}' deleted successfully."}

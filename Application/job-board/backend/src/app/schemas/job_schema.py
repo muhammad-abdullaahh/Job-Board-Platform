@@ -1,22 +1,29 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from datetime import datetime
 from app.models.job import EmploymentType, JobStatus
-from app.schemas.company_schema import PublicCompanyResponse, CompanyResponse
+from app.schemas.company_schema import PublicCompanyResponse
 from app.schemas.user_schema import SkillResponse
-
 
 class JobCreate(BaseModel):
     company_id: int
     title: str
     description: Optional[str] = None
     location: Optional[str] = None
-    salary_min: int = 0
-    salary_max: int = 0
+    salary_min: Optional[int] = 0
+    salary_max: Optional[int] = 0
     employment_type: EmploymentType
     status: JobStatus = JobStatus.open
     skill_ids: Optional[List[int]] = []
 
+    @model_validator(mode="after")
+    def validate_salary_bounds(self):
+        if self.salary_min is not None and self.salary_max is not None:
+            if self.salary_min < 0 or self.salary_max < 0:
+                raise ValueError("Salary values cannot be negative.")
+            if self.salary_min > self.salary_max and self.salary_max > 0:
+                raise ValueError("Minimum salary cannot exceed maximum salary.")
+        return self
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -28,10 +35,17 @@ class JobUpdate(BaseModel):
     status: Optional[JobStatus] = None
     skill_ids: Optional[List[int]] = None
 
+    @model_validator(mode="after")
+    def validate_salary_bounds(self):
+        if self.salary_min is not None and self.salary_max is not None:
+            if self.salary_min < 0 or self.salary_max < 0:
+                raise ValueError("Salary values cannot be negative.")
+            if self.salary_min > self.salary_max and self.salary_max > 0:
+                raise ValueError("Minimum salary cannot exceed maximum salary.")
+        return self
 
 class AdminJobStatusUpdate(BaseModel):
     status: JobStatus
-
 
 class JobResponse(BaseModel):
     job_id: int

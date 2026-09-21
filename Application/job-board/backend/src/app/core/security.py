@@ -36,13 +36,24 @@ def decode_access_token(token: str) -> Optional[dict]:
     except JWTError:
         return None
 
+import hashlib
+import secrets
+
+def hash_token(token: str) -> str:
+    """Compute SHA-256 hash of a token for secure database storage."""
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+def generate_refresh_token_string() -> str:
+    """Generate cryptographically secure opaque refresh token."""
+    return secrets.token_urlsafe(48)
+
 def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "refresh"})
+    to_encode.update({"exp": expire, "type": "refresh", "jti": secrets.token_hex(16)})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def decode_refresh_token(token: str) -> Optional[dict]:

@@ -1,6 +1,6 @@
 import enum
 from app.database import Base
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum, CheckConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.skill import job_skills
@@ -40,6 +40,11 @@ class Job(Base):
 
     deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
     deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("salary_min IS NULL OR salary_min >= 0", name="chk_job_salary_min"),
+        CheckConstraint("salary_max IS NULL OR salary_min IS NULL OR salary_max >= salary_min", name="chk_job_salary_max"),
+    )
 
     # Relationships
     company = relationship("Company", back_populates="jobs")
