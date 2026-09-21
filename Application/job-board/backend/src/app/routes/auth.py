@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, status, Response, Cookie, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def set_refresh_cookie(response: Response, refresh_token: str):
     max_age = settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60
-    is_prod = settings.ENVIRONMENT.lower() == "production" or settings.COOKIE_SECURE
+    is_prod = settings.ENVIRONMENT.lower() == "production" or bool(os.getenv("VERCEL")) or settings.COOKIE_SECURE
     samesite = "none" if is_prod else settings.COOKIE_SAMESITE
     secure = True if is_prod else settings.COOKIE_SECURE
     response.set_cookie(
@@ -83,7 +84,7 @@ def logout(
     service = AuthService(db)
     service.logout(cookie_token)
 
-    is_prod = settings.ENVIRONMENT.lower() == "production" or settings.COOKIE_SECURE
+    is_prod = settings.ENVIRONMENT.lower() == "production" or bool(os.getenv("VERCEL")) or settings.COOKIE_SECURE
     samesite = "none" if is_prod else settings.COOKIE_SAMESITE
     secure = True if is_prod else settings.COOKIE_SECURE
     response.delete_cookie(key="refresh_token", path="/", samesite=samesite, secure=secure)

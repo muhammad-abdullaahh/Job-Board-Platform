@@ -13,10 +13,14 @@ class RefreshTokenRepository:
             token_hash=token_hash,
             expires_at=expires_at,
         )
-        self.db.add(token_record)
-        self.db.commit()
-        self.db.refresh(token_record)
-        return token_record
+        try:
+            self.db.add(token_record)
+            self.db.commit()
+            self.db.refresh(token_record)
+            return token_record
+        except Exception:
+            self.db.rollback()
+            raise
 
     def get_active_by_hash(self, token_hash: str) -> Optional[RefreshToken]:
         now = datetime.now(timezone.utc)

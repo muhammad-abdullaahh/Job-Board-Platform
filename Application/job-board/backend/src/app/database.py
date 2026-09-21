@@ -44,7 +44,41 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+from sqlalchemy import text
+
+_db_migrated = False
+
+def ensure_db_migrated():
+    global _db_migrated
+    if not _db_migrated:
+        try:
+            import app.models  # ensure all models registered with Base metadata
+            Base.metadata.create_all(bind=engine)
+            if DATABASE_URL.startswith("postgresql"):
+                with engine.connect() as conn:
+                    conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS refresh_tokens (
+                            token_id SERIAL PRIMARY KEY,
+                            token_hash VARCHAR(255) NOT NULL UNIQUE,
+                            user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                            expires_at TIMESTAMPTZ NOT NULL,
+                            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                            revoked_at TIMESTAMPTZ
+                        );
+                        CREATE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash ON refresh_tokens(token_hash);
+                        CREATE INDEX IF NOT EXISTS ix_refresh_tokens_user_id ON refresh_tokens(user_id);
+                        ALTER TABLE companies ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(user_id);
+                        UPDATE companies SET created_by = updated_by WHERE created_by IS NULL AND updated_by IS NOT NULL;
+                        ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+                        CREATE UNIQUE INDEX IF NOT EXISTS users_email_active_unique ON users (lower(email)) WHERE deleted_at IS NULL;
+                    """))
+                    conn.commit()
+            _db_migrated = True
+        except Exception as e:
+            logger.warning(f"Auto-migration notice: {e}")
+
 def get_db():
+    ensure_db_migrated()
     db = SessionLocal()
     try:
         yield db

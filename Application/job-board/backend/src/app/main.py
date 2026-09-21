@@ -5,26 +5,26 @@ import logging
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import engine, Base
+from app.database import Base, engine, ensure_db_migrated
 from app.routes import auth, jobs, applications, companies, users, admin
 from fastapi.exceptions import RequestValidationError
 from app.scheduler import start_scheduler
 from app.core.error_handlers import http_exception_handler, generic_exception_handler, validation_exception_handler
-from app.core.logging import log_request
+from app.core.logging import log_request, log_error
 import app.models  # Ensure all models are registered with Base metadata
 
 logger = logging.getLogger("app.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize DB tables for development/local execution
-    if not os.getenv("VERCEL"):
-        try:
-            Base.metadata.create_all(bind=engine)
-        except Exception as e:
-            logger.warning(f"Database table initialization notice: {e}")
+    # Initialize DB tables and schema
+    try:
+        ensure_db_migrated()
+    except Exception as e:
+        logger.warning(f"Database table initialization notice: {e}")
 
     # Start APScheduler background task
     scheduler = None
@@ -53,7 +53,37 @@ async def structured_logging_middleware(request: Request, call_next):
     correlation_id = request.headers.get("X-Correlation-ID") or f"req-{uuid.uuid4().hex[:12]}"
     request.state.correlation_id = correlation_id
 
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        client_ip = request.client.host if request.client else None
+        log_error(
+            correlation_id=correlation_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=500,
+            error_code="INTERNAL_SERVER_ERROR",
+            exception_type=exc.__class__.__name__,
+            stack_trace=traceback.format_exc(),
+        )
+        origin = request.headers.get("origin", "*")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": 500,
+                "code": "INTERNAL_SERVER_ERROR",
+                "detail": "An unexpected error occurred. Please try again later.",
+                "correlation_id": correlation_id,
+            },
+            headers={
+                "X-Correlation-ID": correlation_id,
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
 
     duration_ms = (time.perf_counter() - start_time) * 1000
     response.headers["X-Correlation-ID"] = correlation_id
