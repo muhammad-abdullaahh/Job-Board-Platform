@@ -50,7 +50,7 @@ export const SkeletonJobGrid = ({ count = 6, showLiveIndicator = true }) => {
       {showLiveIndicator && (
         <div className="live-sync-indicator">
           <span className="live-dot" />
-          <span>Syncing real-time opportunities from Supabase...</span>
+          <span>Syncing real-time opportunities !</span>
         </div>
       )}
       <div className="jobs-grid">
