@@ -3,6 +3,7 @@
 # Mounts all API routers and manages application lifespan background tasks.
 
 import os
+import re
 import uuid
 import time
 import logging
@@ -51,6 +52,27 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
+# Configure CORS origins
+cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "https://job-board-platform-frontend-mocha.vercel.app",
+]
+if settings.FRONTEND_URL:
+    clean_frontend = settings.FRONTEND_URL.strip().rstrip("/")
+    if clean_frontend and clean_frontend not in cors_origins:
+        cors_origins.append(clean_frontend)
+
+if settings.CORS_ORIGINS:
+    extra_origins = [orig.strip().rstrip("/") for orig in settings.CORS_ORIGINS.split(",") if orig.strip()]
+    for orig in extra_origins:
+        if orig not in cors_origins:
+            cors_origins.append(orig)
+
+# Regex matching preview and production Vercel branches for this platform only
+ALLOWED_VERCEL_REGEX = re.compile(r"^https:\/\/job-board-platform-frontend(-[a-z0-9-]+)?\.vercel\.app$")
+
 # Structured JSON Access Logging Middleware (Plan Spec #16)
 @app.middleware("http")
 async def structured_logging_middleware(request: Request, call_next):
@@ -72,7 +94,24 @@ async def structured_logging_middleware(request: Request, call_next):
             exception_type=exc.__class__.__name__,
             stack_trace=traceback.format_exc(),
         )
-        origin = request.headers.get("origin", "*")
+
+        request_origin = request.headers.get("origin")
+        is_allowed = False
+        if request_origin:
+            if request_origin in cors_origins or ALLOWED_VERCEL_REGEX.match(request_origin):
+                is_allowed = True
+            elif settings.ENVIRONMENT.lower() != "production":
+                is_allowed = True
+
+        err_headers = {
+            "X-Correlation-ID": correlation_id,
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+        if is_allowed and request_origin:
+            err_headers["Access-Control-Allow-Origin"] = request_origin
+            err_headers["Access-Control-Allow-Credentials"] = "true"
+
         return JSONResponse(
             status_code=500,
             content={
@@ -81,13 +120,7 @@ async def structured_logging_middleware(request: Request, call_next):
                 "detail": "An unexpected error occurred. Please try again later.",
                 "correlation_id": correlation_id,
             },
-            headers={
-                "X-Correlation-ID": correlation_id,
-                "Access-Control-Allow-Origin": origin,
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Allow-Methods": "*",
-                "Access-Control-Allow-Headers": "*",
-            }
+            headers=err_headers
         )
 
     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -106,27 +139,10 @@ async def structured_logging_middleware(request: Request, call_next):
 
     return response
 
-# Configure CORS origins
-cors_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-]
-if settings.FRONTEND_URL:
-    clean_frontend = settings.FRONTEND_URL.strip().rstrip("/")
-    if clean_frontend and clean_frontend not in cors_origins:
-        cors_origins.append(clean_frontend)
-
-if settings.CORS_ORIGINS:
-    extra_origins = [orig.strip().rstrip("/") for orig in settings.CORS_ORIGINS.split(",") if orig.strip()]
-    for orig in extra_origins:
-        if orig not in cors_origins:
-            cors_origins.append(orig)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"^https:\/\/job-board-platform-frontend(-[a-z0-9-]+)?\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],

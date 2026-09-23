@@ -143,6 +143,14 @@ class EmailService:
         }
 
     def _log_dev_reset(self, email: str, reset_url: str, error_reason: str = None):
+        # In production mode, never output active password reset tokens/URLs to logs
+        if settings.ENVIRONMENT.lower() == "production":
+            if error_reason:
+                logger.error(f"[EMAIL SERVICE] Password reset email delivery failed for {email}: {error_reason}")
+            else:
+                logger.info(f"[EMAIL SERVICE] Password reset processed for {email} (SMTP unconfigured).")
+            return
+
         border = "=" * 80
         logger.warning(
             f"\n{border}\n"

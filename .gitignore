@@ -24,11 +24,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Database files
+# Database files & exports
 *.db
 *.sqlite
 *.sqlite3
 .pgdata/
+Application/database_exports/*.csv
+!Application/database_exports/*.example
+
+
 
 # Environment Variables & Secrets
 .env

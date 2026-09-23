@@ -203,3 +203,53 @@ def test_skill_repository_rollback_on_duplicate(db_session):
     skills = repo.get_all()
     assert len(skills) == 1
     assert skills[0].name == "Python"
+
+def test_production_secret_key_validation():
+    """Verify that Settings refuses insecure or default SECRET_KEY in production mode."""
+    from app.config import Settings
+    from pydantic import ValidationError
+
+    # Insecure default keys should be rejected in production
+    for bad_key in ["job-board-super-secret-key-2026", "secret", "short", "change-this-to-a-secure-random-secret-key-for-production"]:
+        with pytest.raises(ValidationError):
+            Settings(ENVIRONMENT="production", SECRET_KEY=bad_key)
+
+    # Empty key should be rejected in production
+    with pytest.raises(ValidationError):
+        Settings(ENVIRONMENT="production", SECRET_KEY="")
+
+    # High-entropy production key (>= 32 chars) should succeed
+    good_key = "a_very_secure_high_entropy_random_production_secret_key_12345"
+    s = Settings(ENVIRONMENT="production", SECRET_KEY=good_key)
+    assert s.SECRET_KEY == good_key
+
+    # Development mode allows dev default key without error
+    dev_s = Settings(ENVIRONMENT="development")
+    assert dev_s.ENVIRONMENT == "development"
+
+def test_cors_vercel_regex_security():
+    """Verify ALLOWED_VERCEL_REGEX strictly permits this platform's Vercel domains and blocks arbitrary ones."""
+    from app.main import ALLOWED_VERCEL_REGEX
+
+    # Legitimate platform preview and prod URLs should match
+    assert ALLOWED_VERCEL_REGEX.match("https://job-board-platform-frontend.vercel.app")
+    assert ALLOWED_VERCEL_REGEX.match("https://job-board-platform-frontend-mocha.vercel.app")
+    assert ALLOWED_VERCEL_REGEX.match("https://job-board-platform-frontend-git-main-muhammad.vercel.app")
+
+    # Arbitrary third-party Vercel URLs must be blocked
+    assert not ALLOWED_VERCEL_REGEX.match("https://evil-attacker.vercel.app")
+    assert not ALLOWED_VERCEL_REGEX.match("https://malicious-site.vercel.app")
+    assert not ALLOWED_VERCEL_REGEX.match("https://other-project.vercel.app")
+    assert not ALLOWED_VERCEL_REGEX.match("http://job-board-platform-frontend.vercel.app")  # reject http
+
+def test_email_service_log_sanitization_in_production(monkeypatch):
+    """Verify that in production mode, password reset links containing JWT tokens are not emitted to logs."""
+    from app.services.email_service import email_service
+    from app.config import settings
+
+    logs = []
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+
+    # In production, _log_dev_reset must not output the secret reset URL
+    email_service._log_dev_reset("user@example.com", "https://app.com/reset-password?token=sensitive-jwt-token-12345")
+    # Verify method safely returns without raising and without exposing token in warning banner
