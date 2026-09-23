@@ -5,6 +5,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.job_repository import JobRepository
 from app.repositories.user_repository import UserRepository
@@ -65,7 +66,11 @@ class ApplicationService:
         if existing:
             raise DuplicateApplicationException()
 
-        return self.app_repo.create(user_id, app_in)
+        try:
+            return self.app_repo.create(user_id, app_in)
+        except IntegrityError:
+            self.db.rollback()
+            raise DuplicateApplicationException()
 
     def get_my_applications(
         self,

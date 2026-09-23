@@ -49,19 +49,27 @@ class RefreshTokenRepository:
         )
         if record:
             record.revoked_at = datetime.now(timezone.utc)
-            self.db.commit()
-            return True
+            try:
+                self.db.commit()
+                return True
+            except Exception:
+                self.db.rollback()
+                raise
         return False
 
     def revoke_all_for_user(self, user_id: int) -> int:
         now = datetime.now(timezone.utc)
-        count = (
-            self.db.query(RefreshToken)
-            .filter(
-                RefreshToken.user_id == user_id,
-                RefreshToken.revoked_at.is_(None)
+        try:
+            count = (
+                self.db.query(RefreshToken)
+                .filter(
+                    RefreshToken.user_id == user_id,
+                    RefreshToken.revoked_at.is_(None)
+                )
+                .update({"revoked_at": now}, synchronize_session=False)
             )
-            .update({"revoked_at": now}, synchronize_session=False)
-        )
-        self.db.commit()
-        return count
+            self.db.commit()
+            return count
+        except Exception:
+            self.db.rollback()
+            raise

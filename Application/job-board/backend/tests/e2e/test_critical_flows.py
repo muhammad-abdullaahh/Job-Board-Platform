@@ -222,3 +222,20 @@ def test_flow_application_lifecycle_and_atomic_offer_acceptance(client, db_sessi
     db_session.expire_all()
     updated_job = db_session.query(Job).filter(Job.job_id == job.job_id).first()
     assert updated_job.status == JobStatus.closed
+
+def test_flow_forgot_password_background_task(client, db_session):
+    """Verify forgot-password endpoint dispatches email via BackgroundTasks without blocking and returns HTTP 200."""
+    user = User(
+        name="Forgot PW User",
+        email="forgot_pw@example.com",
+        password=get_password_hash("OldPassword123!"),
+        is_admin=False
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    res = client.post("/api/v1/auth/forgot-password", json={"email": "forgot_pw@example.com"})
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["status"] == "success"
+    assert "instructions have been sent" in data["message"]

@@ -150,3 +150,56 @@ def test_auth_service_db_refresh_token_lifecycle(db_session):
     # After logout, token cannot be used again
     with pytest.raises(InvalidTokenException):
         auth_service.refresh_access_token(new_raw_refresh)
+
+def test_application_service_duplicate_application_integrity_error(db_session, monkeypatch):
+    """Verify apply_to_job catches IntegrityError from database race condition and cleanly raises DuplicateApplicationException."""
+    from sqlalchemy.exc import IntegrityError
+    from app.schemas.application_schema import ApplicationCreate
+
+    user = User(name="Candidate", email="candidate_race@example.com", password="hash", is_admin=False)
+    db_session.add(user)
+    db_session.commit()
+
+    company = Company(name="Test Co", created_by=user.user_id, is_verified=True)
+    db_session.add(company)
+    db_session.commit()
+
+    job = Job(
+        title="Software Engineer",
+        description="Dev role",
+        company_id=company.company_id,
+        status=JobStatus.open,
+        created_by=user.user_id
+    )
+    db_session.add(job)
+    db_session.commit()
+
+    app_service = ApplicationService(db_session)
+    app_in = ApplicationCreate(job_id=job.job_id, cover_letter="Hello!")
+
+    # Simulate database unique constraint race condition by forcing repo.create to raise IntegrityError
+    def mock_create(*args, **kwargs):
+        raise IntegrityError("mock unique violation", orig=Exception("duplicate key"), params={})
+
+    monkeypatch.setattr(app_service.app_repo, "create", mock_create)
+
+    with pytest.raises(DuplicateApplicationException):
+        app_service.apply_to_job(user.user_id, app_in)
+
+def test_skill_repository_rollback_on_duplicate(db_session):
+    """Verify SkillRepository rolls back on duplicate skill name so session remains valid."""
+    from app.repositories.skill_repository import SkillRepository
+    from sqlalchemy.exc import IntegrityError
+
+    repo = SkillRepository(db_session)
+    skill1 = repo.create("Python")
+    assert skill1.name == "Python"
+
+    # Creating duplicate skill should fail and roll back
+    with pytest.raises(IntegrityError):
+        repo.create("Python")
+
+    # Verify session is still completely healthy and can execute queries
+    skills = repo.get_all()
+    assert len(skills) == 1
+    assert skills[0].name == "Python"

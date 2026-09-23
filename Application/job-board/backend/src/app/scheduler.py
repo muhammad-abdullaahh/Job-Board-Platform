@@ -5,15 +5,24 @@
 import logging
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
+from sqlalchemy import text
 from app.database import SessionLocal
 from app.models.application import Application, ApplicationStatus
 
 logger = logging.getLogger("app.scheduler")
 
 def check_expired_offers():
-    """Background task to auto-expire offers past their 48-hour deadline."""
+    """Background task to auto-expire offers past their 48-hour deadline with multi-worker advisory locking."""
     db = SessionLocal()
+    is_postgres = (db.bind.dialect.name == "postgresql") if db.bind else False
+    lock_acquired = False
+
     try:
+        if is_postgres:
+            lock_acquired = db.execute(text("SELECT pg_try_advisory_lock(987654)")).scalar()
+            if not lock_acquired:
+                return  # Another worker process is currently running this task
+
         now = datetime.now(timezone.utc)
         expired_apps = (
             db.query(Application)
@@ -33,8 +42,14 @@ def check_expired_offers():
         if expired_apps:
             db.commit()
     except Exception as e:
+        db.rollback()
         logger.error(f"Error checking expired offers: {e}")
     finally:
+        if is_postgres and lock_acquired:
+            try:
+                db.execute(text("SELECT pg_advisory_unlock(987654)"))
+            except Exception as unlock_err:
+                logger.warning(f"Advisory lock release notice: {unlock_err}")
         db.close()
 
 def start_scheduler():

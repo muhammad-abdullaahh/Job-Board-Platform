@@ -3,7 +3,7 @@
 # Integrates rate limiting and secure HTTP-only cookies for token handling.
 
 import os
-from fastapi import APIRouter, Depends, status, Response, Cookie, Request
+from fastapi import APIRouter, Depends, status, Response, Cookie, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.services.auth_service import AuthService
@@ -97,13 +97,18 @@ def logout(
 @router.post("/forgot-password", status_code=status.HTTP_200_OK)
 def forgot_password(
     request_in: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _rate: None = Depends(forgot_password_rate_limiter)
 ):
     service = AuthService(db)
     token = service.request_password_reset(request_in.email)
     if token:
-        email_service.send_password_reset_email(to_email=request_in.email, token=token)
+        background_tasks.add_task(
+            email_service.send_password_reset_email,
+            to_email=request_in.email,
+            token=token
+        )
     return {
         "status": "success",
         "message": "If an account with that email exists, password reset instructions have been sent."

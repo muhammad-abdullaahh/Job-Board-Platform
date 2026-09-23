@@ -28,7 +28,6 @@ from app.exceptions import (
 )
 
 import logging
-from app.database import ensure_db_migrated
 
 logger = logging.getLogger("app.services.auth")
 
@@ -46,14 +45,9 @@ class AuthService:
         try:
             self.token_repo.create(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
         except Exception as e:
-            logger.warning(f"Refresh token persistence notice, attempting self-healing migration: {e}")
-            try:
-                self.db.rollback()
-                ensure_db_migrated()
-                self.token_repo.create(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
-            except Exception as retry_err:
-                logger.error(f"Fallback refresh token persistence failed: {retry_err}")
-                self.db.rollback()
+            logger.error(f"Refresh token persistence failed for user #{user_id}: {e}")
+            self.db.rollback()
+            raise
         return raw_token
 
     def register_user(self, user_in) -> Tuple[Token, str]:

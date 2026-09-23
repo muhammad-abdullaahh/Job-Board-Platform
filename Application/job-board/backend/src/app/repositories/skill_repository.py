@@ -24,17 +24,29 @@ class SkillRepository:
             name=name,
             created_by=created_by_user_id
         )
-        self.db.add(skill)
-        self.db.commit()
-        self.db.refresh(skill)
-        return skill
+        try:
+            self.db.add(skill)
+            self.db.commit()
+            self.db.refresh(skill)
+            return skill
+        except Exception:
+            self.db.rollback()
+            raise
 
     def update(self, skill: Skill, new_name: str) -> Skill:
         skill.name = new_name
-        self.db.commit()
-        self.db.refresh(skill)
-        return skill
+        try:
+            self.db.commit()
+            self.db.refresh(skill)
+            return skill
+        except Exception:
+            self.db.rollback()
+            raise
 
     def delete(self, skill: Skill) -> None:
-        self.db.delete(skill)
-        self.db.commit()
+        try:
+            self.db.delete(skill)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise

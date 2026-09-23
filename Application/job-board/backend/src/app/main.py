@@ -6,6 +6,7 @@ import os
 import uuid
 import time
 import logging
+import traceback
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from fastapi import FastAPI, HTTPException, Request

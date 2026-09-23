@@ -102,6 +102,10 @@ class UserService:
     def update_user_role(self, user_id: int, is_admin: bool) -> User:
         user = self.get_user_profile(user_id, include_deleted=True)
         user.is_admin = is_admin
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        try:
+            self.db.commit()
+            self.db.refresh(user)
+            return user
+        except Exception:
+            self.db.rollback()
+            raise

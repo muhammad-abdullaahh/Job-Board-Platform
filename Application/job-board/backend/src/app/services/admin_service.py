@@ -128,9 +128,13 @@ class AdminService:
         job.status = new_status
         job.updated_by = admin_user_id
         job.updated_at = datetime.now(timezone.utc)
-        self.db.commit()
-        self.db.refresh(job)
-        return job
+        try:
+            self.db.commit()
+            self.db.refresh(job)
+            return job
+        except Exception:
+            self.db.rollback()
+            raise
 
     def delete_job(self, job_id: int, admin_user_id: int) -> None:
         """Atomic transaction: soft delete job and cascade soft-delete to its applications."""
