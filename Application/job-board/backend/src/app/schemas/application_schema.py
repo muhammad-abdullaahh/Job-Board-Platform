@@ -1,3 +1,7 @@
+# Job Application Schemas
+# Defines Pydantic models for submitting job applications and updating review statuses.
+# Formats detailed application responses including applicant profiles and job details.
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

@@ -1,3 +1,7 @@
+# Skill Service
+# Provides business operations for creating, searching, and managing platform skills.
+# Validates skill uniqueness and assists with tagging profiles and job posts.
+
 from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status

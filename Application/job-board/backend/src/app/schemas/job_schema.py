@@ -1,3 +1,7 @@
+# Job Listing Schemas
+# Defines Pydantic validation models for creating and editing job posts.
+# Ensures valid salary ranges, employment types, and serializes full job responses.
+
 from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from datetime import datetime

@@ -1,3 +1,7 @@
+# Company Management Routes
+# Exposes API endpoints for creating, editing, and discovering employer companies.
+# Provides admin endpoints for approving and verifying company legitimacy.
+
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session

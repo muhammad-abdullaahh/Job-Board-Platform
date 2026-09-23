@@ -1,3 +1,7 @@
+# Authentication Dependencies
+# Extracts and verifies JWT access tokens from HTTP Authorization headers.
+# Validates user credentials, account existence, and active account status.
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer
 from sqlalchemy.orm import Session

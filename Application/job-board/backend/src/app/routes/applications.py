@@ -1,3 +1,7 @@
+# Job Application Routes
+# Exposes API endpoints for submitting job applications and tracking application statuses.
+# Allows employers to review submissions and candidates to view their application history.
+
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session

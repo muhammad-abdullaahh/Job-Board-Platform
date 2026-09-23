@@ -1,3 +1,7 @@
+# Company Service
+# Handles employer company management, profile updates, and company verification.
+# Enforces company ownership checks and verification requirements for job postings.
+
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status

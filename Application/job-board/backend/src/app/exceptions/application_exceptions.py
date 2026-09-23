@@ -1,3 +1,7 @@
+# Application Domain Exceptions
+# Defines custom domain errors for job application workflows.
+# Handles errors such as duplicate applications, missing records, and expired job offers.
+
 from fastapi import status
 from app.exceptions.base import AppException
 

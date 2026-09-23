@@ -1,3 +1,7 @@
+# User Profile Service
+# Manages user profile updates, skill associations, and account retrieval.
+# Enforces validation rules on years of experience and bio details.
+
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status

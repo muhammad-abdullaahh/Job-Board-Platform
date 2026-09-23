@@ -1,3 +1,7 @@
+# Refresh Token Repository
+# Manages database persistence and lookup for session refresh tokens.
+# Supports token validation, revoking active sessions, and cleaning expired tokens.
+
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session

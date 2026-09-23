@@ -1,3 +1,7 @@
+# Job Repository
+# Performs database operations for creating, updating, and querying job listings.
+# Supports full-text search, filtering by skills or location, and status updates.
+
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload, selectinload

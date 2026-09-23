@@ -1,3 +1,7 @@
+# Background Task Scheduler
+# Manages recurring background jobs using APScheduler.
+# Periodically checks and expires pending job offers past their acceptance deadline.
+
 import logging
 from datetime import datetime, timezone
 from apscheduler.schedulers.background import BackgroundScheduler

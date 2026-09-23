@@ -1,3 +1,7 @@
+# Authentication Schemas
+# Defines Pydantic data schemas for login, user registration, and password recovery.
+# Validates input formats such as email syntax and password strength requirements.
+
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 import re

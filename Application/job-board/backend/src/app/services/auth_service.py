@@ -1,3 +1,7 @@
+# Authentication Service
+# Implements core business logic for user registration, login, and session refresh.
+# Handles password reset tokens, security verifications, and refresh token lifecycles.
+
 from typing import Optional, Tuple
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import IntegrityError

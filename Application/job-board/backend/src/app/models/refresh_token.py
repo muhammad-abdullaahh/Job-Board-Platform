@@ -1,3 +1,7 @@
+# Refresh Token Model
+# Stores hashed refresh tokens for authenticating user sessions.
+# Supports token revocation and automatic expiration tracking for secure session management.
+
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
 from sqlalchemy.orm import relationship

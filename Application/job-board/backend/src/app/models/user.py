@@ -1,3 +1,7 @@
+# User Model
+# Defines the database schema and table structure for application users.
+# Stores profile data, hashed passwords, administrator status, and skill associations.
+
 from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index, CheckConstraint

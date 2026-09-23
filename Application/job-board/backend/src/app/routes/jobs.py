@@ -1,3 +1,7 @@
+# Job Listing Routes
+# Exposes API endpoints for searching, filtering, creating, and managing job postings.
+# Includes public listing views as well as employer job management tools.
+
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session

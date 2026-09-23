@@ -1,3 +1,7 @@
+# Sliding Window Rate Limiter
+# Protects sensitive authentication routes from brute-force attacks and abuse.
+# Limits requests per client IP address using an in-memory sliding time window.
+
 import time
 import threading
 from typing import Dict, List

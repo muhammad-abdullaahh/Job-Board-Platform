@@ -1,3 +1,7 @@
+# Authentication Routes
+# Exposes API endpoints for user registration, login, token refresh, and password recovery.
+# Integrates rate limiting and secure HTTP-only cookies for token handling.
+
 import os
 from fastapi import APIRouter, Depends, status, Response, Cookie, Request
 from sqlalchemy.orm import Session

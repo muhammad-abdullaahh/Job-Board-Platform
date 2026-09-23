@@ -1,3 +1,7 @@
+# Company Model
+# Represents employers and hiring companies in the database.
+# Stores company profiles, verification status, and relationships to job listings and owners.
+
 from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey

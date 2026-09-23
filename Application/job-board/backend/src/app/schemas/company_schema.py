@@ -1,3 +1,7 @@
+# Company Schemas
+# Defines Pydantic models for creating, updating, and viewing employer companies.
+# Formats company profile data for public job board views and admin interfaces.
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

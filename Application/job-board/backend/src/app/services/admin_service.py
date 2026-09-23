@@ -1,3 +1,7 @@
+# Administrator Service
+# Coordinates platform moderation, analytics reporting, and system management.
+# Handles company approvals, user suspension, role management, and audit listings.
+
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session, joinedload, selectinload

@@ -1,3 +1,7 @@
+# Application Repository
+# Executes database queries for job applications and candidate submissions.
+# Handles application tracking, status updates, interview schedules, and expiration checks.
+
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload

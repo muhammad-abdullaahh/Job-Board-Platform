@@ -1,3 +1,7 @@
+# Job Application Service
+# Manages the candidate application workflow from submission to decision.
+# Handles applicant qualification checks, employer reviews, and automated offer deadlines.
+
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session

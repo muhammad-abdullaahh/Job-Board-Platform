@@ -1,3 +1,7 @@
+# Job Application Model
+# Tracks candidate job applications, cover letters, and application lifecycle statuses.
+# Links applicants to specific job postings with unique submission constraints.
+
 import enum
 from app.database import Base
 from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey, UniqueConstraint, Enum as SQLEnum

@@ -1,3 +1,7 @@
+# Centralized Error Handlers
+# Catches HTTP errors, input validation failures, and unhandled exceptions.
+# Formats all errors into consistent JSON responses with correlation IDs for easy debugging.
+
 import traceback
 from fastapi import Request, HTTPException
 from fastapi.exceptions import RequestValidationError

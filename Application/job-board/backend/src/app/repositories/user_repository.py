@@ -1,3 +1,7 @@
+# User Repository
+# Handles database queries and persistence for user accounts and profiles.
+# Supports account lookup, profile updates, skill assignments, and administrative soft deletion.
+
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session

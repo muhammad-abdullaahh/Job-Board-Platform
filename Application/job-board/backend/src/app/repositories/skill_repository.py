@@ -1,3 +1,7 @@
+# Skill Repository
+# Manages database access for standard platform skills and tags.
+# Provides methods to query, create, and search skills by name.
+
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.skill import Skill

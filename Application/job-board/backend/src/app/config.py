@@ -1,3 +1,7 @@
+# Application Configuration
+# Loads environment variables and defines application-wide settings.
+# Manages database connections, security tokens, and CORS settings.
+
 import os
 from pathlib import Path
 from pydantic import field_validator

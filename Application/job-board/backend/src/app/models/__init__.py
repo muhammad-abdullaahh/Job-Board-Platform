@@ -1,3 +1,7 @@
+# Models Package
+# Exports all SQLAlchemy ORM models to register them with metadata.
+# Ensures database tables and foreign key relationships are properly initialized.
+
 from app.models.user import User
 from app.models.company import Company
 from app.models.skill import Skill, user_skills, job_skills

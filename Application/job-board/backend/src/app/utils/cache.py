@@ -1,3 +1,7 @@
+# In-Memory Cache Utility
+# Provides thread-safe in-memory caching with time-to-live (TTL) expiration.
+# Speeds up frequently accessed read endpoints and supports prefix-based cache invalidation.
+
 import time
 import threading
 from typing import Any, Optional, Dict

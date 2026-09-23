@@ -1,3 +1,7 @@
+# Company Repository
+# Manages database interactions for employer and company records.
+# Handles company creation, verification status, ownership checks, and company searches.
+
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session

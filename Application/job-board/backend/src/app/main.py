@@ -1,3 +1,7 @@
+# FastAPI Application Entry Point
+# Initializes the FastAPI app, registers exception handlers, and configures CORS middleware.
+# Mounts all API routers and manages application lifespan background tasks.
+
 import os
 import uuid
 import time

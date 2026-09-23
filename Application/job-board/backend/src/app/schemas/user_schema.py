@@ -1,3 +1,7 @@
+# User Schemas
+# Defines Pydantic models for user profile updates, role assignments, and API responses.
+# Serializes user accounts and associated skill lists for client communication.
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime

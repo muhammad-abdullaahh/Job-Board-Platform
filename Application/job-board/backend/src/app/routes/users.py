@@ -1,3 +1,7 @@
+# User Profile and Skill Routes
+# Exposes API endpoints for managing user profiles, skills, and account settings.
+# Allows job seekers to browse talent, update experience, or delete accounts.
+
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy.orm import Session

@@ -1,3 +1,7 @@
+# Structured JSON Logging
+# Formats application access logs and error logs into clean, single-line JSON records.
+# Enables centralized log tracking with correlation IDs and execution timing.
+
 import json
 import logging
 import sys

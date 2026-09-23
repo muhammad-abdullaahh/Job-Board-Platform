@@ -1,3 +1,7 @@
+# Skill Model and Association Tables
+# Defines standardized technical and professional skills across the platform.
+# Manages many-to-many relationship tables linking skills to users and job postings.
+
 from datetime import datetime, timezone
 from app.database import Base
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table

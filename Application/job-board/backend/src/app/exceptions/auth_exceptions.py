@@ -1,3 +1,7 @@
+# Authentication Exceptions
+# Defines custom domain errors for login failures, duplicate users, and token issues.
+# Standardizes error codes for password resets, expired tokens, and invalid credentials.
+
 from fastapi import status
 from app.exceptions.base import AppException
 

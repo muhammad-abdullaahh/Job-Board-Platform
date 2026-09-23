@@ -1,3 +1,7 @@
+# Base Application Exception
+# Defines the root exception class for all custom domain errors.
+# Attaches standard machine-readable error codes alongside HTTP status codes.
+
 from fastapi import HTTPException
 
 class AppException(HTTPException):

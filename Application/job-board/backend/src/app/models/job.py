@@ -1,3 +1,7 @@
+# Job Listing Model
+# Defines job postings including title, description, employment type, salary range, and status.
+# Links jobs to their hiring company, required skills, and candidate applications.
+
 import enum
 from app.database import Base
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum, CheckConstraint

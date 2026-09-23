@@ -1,3 +1,7 @@
+# Database Configuration and Session Management
+# Sets up the SQLAlchemy database engine, connection pooling, and session factories.
+# Handles automatic table migrations and schema integrity on application startup.
+
 import os
 import logging
 from sqlalchemy import create_engine

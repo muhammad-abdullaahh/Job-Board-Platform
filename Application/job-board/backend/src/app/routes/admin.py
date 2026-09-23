@@ -1,3 +1,7 @@
+# Administration Routes
+# Exposes protected API endpoints for platform administrators.
+# Provides analytics dashboards, user role management, account suspension, and moderation tools.
+
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session

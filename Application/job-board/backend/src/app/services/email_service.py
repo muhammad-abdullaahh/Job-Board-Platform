@@ -1,3 +1,7 @@
+# Email Notification Service
+# Formats and sends transactional emails for password resets and application status alerts.
+# Supports HTML and plain-text email templates using SMTP.
+
 import smtplib
 import logging
 from email.mime.multipart import MIMEMultipart

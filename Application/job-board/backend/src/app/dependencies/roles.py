@@ -1,3 +1,7 @@
+# Role and Permission Dependencies
+# Enforces access control based on user roles and resource ownership.
+# Provides reusable guards for administrator-only routes and job seeker operations.
+
 from fastapi import Depends, HTTPException, status
 from app.dependencies.auth import get_current_user
 from app.models.user import User

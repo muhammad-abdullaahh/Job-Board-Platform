@@ -1,3 +1,7 @@
+# Job Management Service
+# Coordinates creating, updating, closing, and querying job listings.
+# Validates salary ranges, company verification status, and required skill tags.
+
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.repositories.job_repository import JobRepository

@@ -1,3 +1,7 @@
+# Security and Authentication Utilities
+# Provides password hashing and verification using bcrypt.
+# Generates and validates JSON Web Tokens (JWT) for user sessions and password resets.
+
 import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone

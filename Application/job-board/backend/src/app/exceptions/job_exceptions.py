@@ -1,3 +1,7 @@
+# Job Domain Exceptions
+# Defines custom domain errors for missing jobs, unverified companies, and salary errors.
+# Ensures consistent error codes when employers or job seekers interact with job listings.
+
 from fastapi import status
 from app.exceptions.base import AppException
 
