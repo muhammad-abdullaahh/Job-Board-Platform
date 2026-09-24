@@ -118,6 +118,7 @@ Job-Board-Platform/
 │   │       ├── scheduler.py        # APScheduler job definitions
 │   │       └── main.py             # Application entrypoint
 │   ├── tests/                      # Unit, integration, & E2E tests
+│   ├── docker-compose.yml          # Local PostgreSQL & backend container setup
 │   ├── requirements.txt            # Python dependencies
 │   └── vercel.json                 # Vercel backend config
 │
@@ -138,7 +139,6 @@ Job-Board-Platform/
 │   ├── vite.config.js              # Vite build configuration
 │   └── vercel.json                 # Vercel frontend config
 │
-├── docker-compose.yml              # Local multi-container orchestration
 ├── .gitignore                      # Git ignored files & patterns
 └── README.md                       # Project documentation
 ```
