@@ -23,11 +23,11 @@ This repository includes foundational software engineering and database design a
 
 | Document / Asset | Description | Reference Link |
 | :--- | :--- | :--- |
-| **Requirements Document** | Preliminary project specification, functional modules, and business logic | [📄 View Requirements (PDF)](./SRS.pdf) |
-| **Entity-Relationship Diagram (ERD)** | Relational data schema, foreign keys, cardinality, and constraints | [🖼️ View ERD (JPEG)](./ERD.jpeg) |
-| **Front-End User Flow** | Visual state diagrams, authentication checkpoints, and route workflows | [🗺️ View Flow Diagram (PNG)](./Front-end%20flow.png) |
-| **Production SQL Schema** | DDL with relational tables, enum definitions, partial indexes, and transactions | [💾 View SQL Schema](./Final%20schema%20%28%20along%20with%20structure,%20indexes%20and%20transactions%29.sql) |
-| **Detailed Project Planning** | Comprehensive sprint planning, timeline milestones, and architectural notes | [📝 Planning (DOCX)](./Planning%20Detailed.docx) \| [📝 Finalized Plan (ODT)](./Job%20Board%20Finalizaed%20Planning.odt) |
+| **Requirements Document** | Preliminary project specification, functional modules, and business logic | [📄 View Requirements](./backend/docs/SRS.docx) \| [📝 View PRD](./backend/docs/prd.md) |
+| **Entity-Relationship Diagram (ERD)** | Relational data schema, foreign keys, cardinality, and constraints | [🖼️ View ERD (JPEG)](./backend/docs/ERD.jpeg) |
+| **Front-End User Flow** | Visual state diagrams, authentication checkpoints, and route workflows | [🗺️ View Flow Diagram (PNG)](./frontend/docs/Front-end%20flow.png) |
+| **Production SQL Schema** | DDL with relational tables, enum definitions, partial indexes, and transactions | [💾 View SQL Schema](./backend/database/Schema.sql) |
+| **Architecture & Planning** | Frontend & backend architecture specs and vision documents | [📝 Backend Architecture](./backend/docs/Backend%20Architecture%20Design%20Document.odt) \| [📝 Frontend Architecture](./frontend/docs/Frontend_Architecture_Design_Document.docx) \| [📝 Vision & Scope](./backend/docs/Vision%20and%20Scope%20Document.docx) |
 
 ---
 
@@ -90,48 +90,56 @@ This repository includes foundational software engineering and database design a
 
 ```text
 Job-Board-Platform/
-├── Application/
-│   ├── database_exports/           # Pre-seeded CSV database dumps
-│   │   ├── users.csv
-│   │   ├── companies.csv
-│   │   ├── jobs.csv
-│   │   ├── skills.csv
-│   │   └── applications.csv
-│   └── job-board/
-│       ├── backend/                # FastAPI Backend Application
-│       │   ├── alembic/            # Database migration scripts
-│       │   ├── api/                # Serverless deployment entrypoints
-│       │   ├── src/
-│       │   │   └── app/
-│       │   │       ├── core/       # Error handlers, security, & config
-│       │   │       ├── database.py # SQLAlchemy session & engine
-│       │   │       ├── models/     # Relational ORM models
-│       │   │       ├── routes/     # Auth, Jobs, Companies, Users, Admin
-│       │   │       ├── schemas/    # Pydantic validation schemas
-│       │   │       ├── services/   # Business logic layer
-│       │   │       ├── scheduler.py# APScheduler job definitions
-│       │   │       └── main.py     # Application entrypoint
-│       │   ├── requirements.txt    # Python dependencies
-│       │   └── vercel.json         # Vercel backend config
-│       │
-│       └── frontend/               # React + Vite Frontend Application
-│           ├── public/             # Static assets
-│           ├── src/
-│           │   ├── api/            # Axios HTTP client & interceptors
-│           │   ├── auth/           # Context provider & auth hooks
-│           │   ├── components/     # UI components (Sidebar, TopHeader, Modal, etc.)
-│           │   ├── pages/          # Application views (Home, Jobs, Dashboard, etc.)
-│           │   ├── index.css       # Design tokens & responsive styling
-│           │   ├── App.jsx         # Router & root layout
-│           │   └── main.jsx        # DOM entrypoint
-│           ├── package.json        # Node.js dependencies & scripts
-│           └── vite.config.js      # Vite build configuration
+├── backend/                        # FastAPI Backend Application & DB Resources
+│   ├── alembic/                    # Database migration scripts
+│   ├── api/                        # Serverless deployment entrypoints
+│   ├── database/                   # Database schemas & seed data
+│   │   ├── Schema.sql              # Complete PostgreSQL DDL & constraints
+│   │   └── database_exports/       # Pre-seeded CSV database dumps
+│   │       ├── users.csv
+│   │       ├── companies.csv
+│   │       ├── jobs.csv
+│   │       ├── skills.csv
+│   │       └── applications.csv
+│   ├── docs/                       # Backend architecture, ERD, SRS, & PRD
+│   │   ├── Backend Architecture Design Document.odt
+│   │   ├── ERD.jpeg
+│   │   ├── SRS.docx
+│   │   ├── Vision and Scope Document.docx
+│   │   └── prd.md
+│   ├── src/
+│   │   └── app/
+│   │       ├── core/               # Error handlers, security, & config
+│   │       ├── database.py         # SQLAlchemy session & engine
+│   │       ├── models/             # Relational ORM models
+│   │       ├── routes/             # Auth, Jobs, Companies, Users, Admin
+│   │       ├── schemas/            # Pydantic validation schemas
+│   │       ├── services/           # Business logic layer
+│   │       ├── scheduler.py        # APScheduler job definitions
+│   │       └── main.py             # Application entrypoint
+│   ├── tests/                      # Unit, integration, & E2E tests
+│   ├── requirements.txt            # Python dependencies
+│   └── vercel.json                 # Vercel backend config
 │
-├── ERD.jpeg                        # Entity Relationship Diagram
-├── Front-end flow.png              # User flow and navigation diagram
-├── Final schema (...).sql          # Complete DDL and database setup script
-├── SRS.pdf                         # Requirements Specification Document
-├── Planning Detailed.docx          # Detailed implementation notes
+├── frontend/                       # React + Vite Frontend Application
+│   ├── docs/                       # Frontend architecture & flow diagrams
+│   │   ├── Frontend_Architecture_Design_Document.docx
+│   │   └── Front-end flow.png
+│   ├── public/                     # Static assets (logos, icons)
+│   ├── src/
+│   │   ├── api/                    # Axios HTTP client & interceptors
+│   │   ├── auth/                   # Context provider & auth hooks
+│   │   ├── components/             # UI components (Sidebar, TopHeader, Modal, etc.)
+│   │   ├── pages/                  # Application views (Home, Jobs, Dashboard, etc.)
+│   │   ├── index.css               # Design tokens & responsive styling
+│   │   ├── App.jsx                 # Router & root layout
+│   │   └── main.jsx                # DOM entrypoint
+│   ├── package.json                # Node.js dependencies & scripts
+│   ├── vite.config.js              # Vite build configuration
+│   └── vercel.json                 # Vercel frontend config
+│
+├── docker-compose.yml              # Local multi-container orchestration
+├── .gitignore                      # Git ignored files & patterns
 └── README.md                       # Project documentation
 ```
 
@@ -159,7 +167,7 @@ cd Job-Board-Platform
 
 1. Navigate to the backend directory:
    ```bash
-   cd Application/job-board/backend
+   cd backend
    ```
 
 2. Create and activate a Python virtual environment:
@@ -179,7 +187,7 @@ cd Job-Board-Platform
    ```
 
 4. Configure environment variables:
-   Create a `.env` file in `Application/job-board/backend/` based on `.env.example`:
+   Create a `.env` file in `backend/` based on `.env.example`:
    ```env
    DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/job_board_db
    SECRET_KEY=generate-a-secure-random-secret-key
@@ -211,7 +219,7 @@ cd Job-Board-Platform
 
 1. Open a new terminal and navigate to the frontend directory:
    ```bash
-   cd Application/job-board/frontend
+   cd frontend
    ```
 
 2. Install Node dependencies:
@@ -220,7 +228,7 @@ cd Job-Board-Platform
    ```
 
 3. Configure frontend environment variables:
-   Create a `.env` file in `Application/job-board/frontend/`:
+   Create a `.env` file in `frontend/`:
    ```env
    VITE_API_URL=http://localhost:8000
    ```

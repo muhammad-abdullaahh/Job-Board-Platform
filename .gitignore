@@ -29,8 +29,8 @@ pnpm-debug.log*
 *.sqlite
 *.sqlite3
 .pgdata/
-Application/database_exports/*.csv
-!Application/database_exports/*.example
+backend/database/database_exports/*.csv
+!backend/database/database_exports/*.example
 
 
 
