@@ -51,6 +51,23 @@ class JobUpdate(BaseModel):
 class AdminJobStatusUpdate(BaseModel):
     status: JobStatus
 
+class JobListResponse(BaseModel):
+    job_id: int
+    company_id: int
+    title: str
+    location: Optional[str] = None
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    employment_type: EmploymentType
+    status: JobStatus
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    company: Optional[PublicCompanyResponse] = None
+    skills: List[SkillResponse] = []
+
+    class Config:
+        from_attributes = True
+
 class JobResponse(BaseModel):
     job_id: int
     company_id: int
@@ -68,3 +85,4 @@ class JobResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

@@ -1,22 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { fetchJobDetailApi } from '../api/jobsApi';
+import { useParams, useLocation, Link } from 'react-router-dom';
+import { fetchJobDetailWithCache } from '../api/jobsApi';
+import { getCache } from '../api/apiCache';
 import { ApplicationModal } from '../components/ApplicationModal';
 import { LoadingThrobber } from '../components/LoadingThrobber';
 
 export const JobDetailPage = () => {
   const { jobId } = useParams();
-  const [job, setJob] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
+  // Instant 0ms render: initialize from route state (passed by list card) or client SWR cache
+  const cachedData = getCache(`jobs:detail:${jobId}`)?.data;
+  const initialJob = location.state?.job || cachedData || null;
+
+  const [job, setJob] = useState(initialJob);
+  const [loading, setLoading] = useState(!initialJob);
+  const [loadingDescription, setLoadingDescription] = useState(initialJob ? !initialJob.description : false);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    fetchJobDetailApi(jobId)
-      .then((data) => {
-        setJob(data);
+    let isMounted = true;
+
+    fetchJobDetailWithCache(jobId, {
+      onData: (data) => {
+        if (!isMounted) return;
+        setJob((prev) => ({ ...(prev || {}), ...data }));
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+        setLoadingDescription(false);
+      },
+      onError: (err) => {
+        if (!isMounted) return;
+        console.error('Failed to load full job details:', err);
+        setLoading(false);
+        setLoadingDescription(false);
+      },
+    }).catch(() => {
+      if (isMounted) {
+        setLoading(false);
+        setLoadingDescription(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [jobId]);
 
   if (loading) {
@@ -79,7 +106,18 @@ export const JobDetailPage = () => {
 
         <div className="job-description" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
           <h3 style={{ marginBottom: '0.75rem', fontSize: '1.2rem' }}>Position Description</h3>
-          <p style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{job.description}</p>
+          {loadingDescription && !job.description ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', padding: '0.5rem 0' }}>
+              <span className="skeleton-box" style={{ width: '96%', height: '14px', borderRadius: '4px' }} />
+              <span className="skeleton-box" style={{ width: '91%', height: '14px', borderRadius: '4px' }} />
+              <span className="skeleton-box" style={{ width: '84%', height: '14px', borderRadius: '4px' }} />
+              <span className="skeleton-box" style={{ width: '68%', height: '14px', borderRadius: '4px' }} />
+            </div>
+          ) : (
+            <p style={{ whiteSpace: 'pre-line', lineHeight: '1.7', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+              {job.description || 'No detailed description provided for this role.'}
+            </p>
+          )}
         </div>
 
         <div style={{ marginTop: '2rem' }}>

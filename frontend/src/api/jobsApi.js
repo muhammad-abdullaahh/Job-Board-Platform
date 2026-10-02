@@ -21,6 +21,16 @@ export const fetchJobDetailApi = async (jobId) => {
   return response.data;
 };
 
+export const fetchJobDetailWithCache = async (jobId, { onData, onError } = {}) => {
+  const cacheKey = `jobs:detail:${jobId}`;
+  return swrFetch(cacheKey, () => fetchJobDetailApi(jobId), {
+    onData,
+    onError,
+    freshTtl: 60000,
+    maxTtl: 300000,
+  });
+};
+
 export const createJobApi = async (jobData) => {
   const response = await axiosClient.post('/jobs', jobData);
   invalidateCache('jobs');

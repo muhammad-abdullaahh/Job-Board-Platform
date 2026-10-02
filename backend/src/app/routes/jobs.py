@@ -10,12 +10,12 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.services.job_service import JobService
 from app.models.job import JobStatus, EmploymentType
-from app.schemas.job_schema import JobCreate, JobUpdate, JobResponse
+from app.schemas.job_schema import JobCreate, JobUpdate, JobResponse, JobListResponse
 from app.utils.cache import api_cache
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
-@router.get("", response_model=List[JobResponse])
+@router.get("", response_model=List[JobListResponse])
 def search_jobs(
     response: Response,
     q: Optional[str] = Query(None),
@@ -52,7 +52,7 @@ def search_jobs(
         sort_by=sort_by,
         order=order,
     )
-    validated = [JobResponse.model_validate(j) for j in raw_jobs]
+    validated = [JobListResponse.model_validate(j) for j in raw_jobs]
     api_cache.set(cache_key, validated, ttl=60)
     response.headers["X-Cache"] = "MISS"
     return validated

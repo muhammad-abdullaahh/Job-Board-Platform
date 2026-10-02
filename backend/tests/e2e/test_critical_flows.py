@@ -125,10 +125,27 @@ def test_flow_company_verification_and_salary_validation(client, db_session):
     bad_body = bad_res.json()
     assert "code" in bad_body
 
-    # Employer posts valid job -> 201 Created
     valid_res = client.post("/api/v1/jobs", json=job_payload, headers=emp_headers)
     assert valid_res.status_code == 201, valid_res.text
-    assert valid_res.json()["title"] == "Machine Learning Engineer"
+    created_job = valid_res.json()
+    assert created_job["title"] == "Machine Learning Engineer"
+    job_id = created_job["job_id"]
+
+    # Verify GET /api/v1/jobs returns lightweight JobListResponse (without full description)
+    list_res = client.get("/api/v1/jobs")
+    assert list_res.status_code == 200
+    listed_jobs = list_res.json()
+    found_summary = next(j for j in listed_jobs if j["job_id"] == job_id)
+    assert "description" not in found_summary
+    assert found_summary["title"] == "Machine Learning Engineer"
+
+    # Verify GET /api/v1/jobs/{id} returns complete JobResponse (with full description)
+    detail_res = client.get(f"/api/v1/jobs/{job_id}")
+    assert detail_res.status_code == 200
+    detail_body = detail_res.json()
+    assert "description" in detail_body
+    assert detail_body["description"] == job_payload["description"]
+
 
 
 def test_flow_application_lifecycle_and_atomic_offer_acceptance(client, db_session):

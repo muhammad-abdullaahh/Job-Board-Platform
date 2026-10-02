@@ -26,7 +26,9 @@ export const JobCard = ({ job, onApply }) => {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.65rem', flexWrap: 'wrap' }}>
           <h3 className="job-title" style={{ fontSize: '1.2rem', color: '#FFFFFF', margin: 0, fontWeight: 700, flex: 1, minWidth: '160px', wordBreak: 'break-word' }}>
-            {job.title || 'Untitled Position'}
+            <Link to={`/jobs/${job.job_id || job.id}`} state={{ job }} style={{ color: 'inherit', textDecoration: 'none' }}>
+              {job.title || 'Untitled Position'}
+            </Link>
           </h3>
           <span className="badge badge-primary" style={{ fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>{empType}</span>
         </div>
@@ -57,12 +59,12 @@ export const JobCard = ({ job, onApply }) => {
         )}
 
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.5 }}>
-          {job.description || 'Join a high-growth team building cutting-edge solutions.'}
+          {job.description || `Explore this ${empType.toLowerCase()} opportunity at ${companyName} with verified team details.`}
         </p>
       </div>
 
       <div className="card-actions" style={{ display: 'flex', gap: '0.65rem', marginTop: 'auto' }}>
-        <Link to={`/jobs/${job.job_id || job.id}`} className="btn btn-outline" style={{ flex: 1, textAlign: 'center', minHeight: '40px' }}>Details</Link>
+        <Link to={`/jobs/${job.job_id || job.id}`} state={{ job }} className="btn btn-outline" style={{ flex: 1, textAlign: 'center', minHeight: '40px' }}>Details</Link>
         <button onClick={handleApplyClick} className="btn btn-emerald" style={{ flex: 1, textAlign: 'center', minHeight: '40px' }}>
           Apply &rarr;
         </button>

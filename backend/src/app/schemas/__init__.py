@@ -3,13 +3,13 @@ from app.schemas.auth_schema import (
 )
 from app.schemas.user_schema import UserUpdate, UserResponse, SkillResponse, SkillCreate
 from app.schemas.company_schema import CompanyCreate, CompanyUpdate, CompanyRenameRequest, CompanyResponse
-from app.schemas.job_schema import JobCreate, JobUpdate, JobResponse
+from app.schemas.job_schema import JobCreate, JobUpdate, JobResponse, JobListResponse
 from app.schemas.application_schema import ApplicationCreate, ApplicationStatusUpdate, ApplicationResponse
 
 __all__ = [
     "Token", "TokenData", "LoginRequest", "UserRegisterRequest", "ForgotPasswordRequest", "ResetPasswordRequest",
     "UserUpdate", "UserResponse", "SkillResponse", "SkillCreate",
     "CompanyCreate", "CompanyUpdate", "CompanyRenameRequest", "CompanyResponse",
-    "JobCreate", "JobUpdate", "JobResponse",
+    "JobCreate", "JobUpdate", "JobResponse", "JobListResponse",
     "ApplicationCreate", "ApplicationStatusUpdate", "ApplicationResponse"
 ]
