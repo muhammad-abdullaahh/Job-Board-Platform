@@ -124,7 +124,7 @@ class UserRepository:
             raise
 
     def update_user(self, user: User, user_in) -> User:
-        update_data = user_in.dict(exclude_unset=True)
+        update_data = user_in.model_dump(exclude_unset=True)
 
         if 'years_of_experience' in update_data:
             user.years_experience = update_data.pop('years_of_experience') or 0

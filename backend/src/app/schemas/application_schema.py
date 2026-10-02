@@ -2,7 +2,7 @@
 # Defines Pydantic models for submitting job applications and updating review statuses.
 # Formats detailed application responses including applicant profiles and job details.
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from app.models.application import ApplicationStatus
@@ -23,6 +23,8 @@ class ApplicationStatusUpdate(BaseModel):
 
 
 class ApplicationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     application_id: int
     user_id: int
     job_id: int
@@ -38,5 +40,3 @@ class ApplicationResponse(BaseModel):
     job: Optional[JobResponse] = None
     applicant: Optional[UserResponse] = None
 
-    class Config:
-        from_attributes = True

@@ -184,7 +184,7 @@ class JobRepository:
             raise
 
     def update(self, job: Job, job_in, user_id: Optional[int] = None) -> Job:
-        update_data = job_in.dict(exclude_unset=True)
+        update_data = job_in.model_dump(exclude_unset=True)
         skill_ids = update_data.pop('skill_ids', None)
 
         for field, value in update_data.items():

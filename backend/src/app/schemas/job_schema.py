@@ -2,7 +2,7 @@
 # Defines Pydantic validation models for creating and editing job posts.
 # Ensures valid salary ranges, employment types, and serializes full job responses.
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import Optional, List
 from datetime import datetime
 from app.models.job import EmploymentType, JobStatus
@@ -52,6 +52,8 @@ class AdminJobStatusUpdate(BaseModel):
     status: JobStatus
 
 class JobListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     job_id: int
     company_id: int
     title: str
@@ -65,10 +67,9 @@ class JobListResponse(BaseModel):
     company: Optional[PublicCompanyResponse] = None
     skills: List[SkillResponse] = []
 
-    class Config:
-        from_attributes = True
-
 class JobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     job_id: int
     company_id: int
     title: str
@@ -82,7 +83,4 @@ class JobResponse(BaseModel):
     updated_at: Optional[datetime] = None
     company: Optional[PublicCompanyResponse] = None
     skills: List[SkillResponse] = []
-
-    class Config:
-        from_attributes = True
 

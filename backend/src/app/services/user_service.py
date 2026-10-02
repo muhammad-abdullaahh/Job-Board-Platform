@@ -54,7 +54,7 @@ class UserService:
         )
 
     def update_user_profile(self, user: User, user_in) -> User:
-        update_data = user_in.dict(exclude_unset=True)
+        update_data = user_in.model_dump(exclude_unset=True)
         skill_ids = update_data.pop('skill_ids', None)
 
         if skill_ids is not None:

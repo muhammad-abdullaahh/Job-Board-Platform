@@ -2,7 +2,7 @@
 # Defines Pydantic models for user profile updates, role assignments, and API responses.
 # Serializes user accounts and associated skill lists for client communication.
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -10,11 +10,10 @@ class SkillCreate(BaseModel):
     name: str
 
 class SkillResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     skill_id: int
     name: str
-
-    class Config:
-        from_attributes = True
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -29,6 +28,8 @@ class DeleteAccountRequest(BaseModel):
     password: str
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user_id: int
     name: str
     email: EmailStr
@@ -41,5 +42,3 @@ class UserResponse(BaseModel):
     deleted_by: Optional[int] = None
     skills: List[SkillResponse] = []
 
-    class Config:
-        from_attributes = True

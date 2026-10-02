@@ -74,7 +74,7 @@ class CompanyRepository:
             raise
 
     def update(self, company: Company, company_in, updater_user_id: Optional[int] = None) -> Company:
-        update_data = company_in.dict(exclude_unset=True)
+        update_data = company_in.model_dump(exclude_unset=True)
         is_verified = update_data.pop('is_verified', None)
 
         # Backfill created_by if missing
