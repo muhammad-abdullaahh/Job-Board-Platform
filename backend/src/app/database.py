@@ -23,8 +23,9 @@ if DATABASE_URL.startswith("postgresql"):
     # Enable SSL mode for Supabase endpoints if not already specified in URL
     if ("supabase.co" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL) and "sslmode=" not in DATABASE_URL:
         connect_args["sslmode"] = "require"
-    # Guard against zombie connections and hung queries
-    connect_args["options"] = "-c statement_timeout=30000 -c idle_in_transaction_session_timeout=15000"
+    # Guard against zombie connections and hung queries (avoid options on PgBouncer transaction pooler port 6543)
+    if ":6543" not in DATABASE_URL and "pool_mode=transaction" not in DATABASE_URL:
+        connect_args["options"] = "-c statement_timeout=30000 -c idle_in_transaction_session_timeout=15000"
 
 if is_serverless:
     # In serverless environments, do NOT maintain persistent connection pools.
