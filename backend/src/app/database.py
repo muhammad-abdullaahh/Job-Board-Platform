@@ -14,6 +14,12 @@ logger = logging.getLogger("app.database")
 
 DATABASE_URL = settings.DATABASE_URL
 
+# Ensure the psycopg (v3) driver is used when standard postgresql:// or postgres:// scheme is provided
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+
 # Detect serverless environment (e.g., Vercel, AWS Lambda)
 is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
 
