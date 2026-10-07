@@ -13,11 +13,6 @@ for p in paths_to_add:
         sys.path.remove(p)
     sys.path.insert(0, p)
 
-try:
-    from app.main import app
-    handler = app
-except Exception as e:
-    import traceback
-    traceback.print_exc(file=sys.stderr)
-    raise
+from app.main import app
+handler = app
 
