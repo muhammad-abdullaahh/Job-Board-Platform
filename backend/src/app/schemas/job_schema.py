@@ -84,3 +84,12 @@ class JobResponse(BaseModel):
     company: Optional[PublicCompanyResponse] = None
     skills: List[SkillResponse] = []
 
+
+__all__ = [
+    "JobCreate",
+    "JobUpdate",
+    "AdminJobStatusUpdate",
+    "JobListResponse",
+    "JobResponse",
+]
+

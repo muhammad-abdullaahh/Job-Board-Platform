@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-import pytest
 from app.models.user import User
 from app.models.skill import Skill
 from app.models.company import Company

@@ -64,7 +64,7 @@ class UserRepository:
         from sqlalchemy import text
         from sqlalchemy.orm import selectinload
 
-        conditions = ["u.deleted_at IS NULL", "(u.is_admin = FALSE OR u.is_admin = 0)"]
+        conditions = ["u.deleted_at IS NULL", "NOT u.is_admin"]
         params: dict = {"limit": limit, "skip": skip}
 
         if min_experience is not None:

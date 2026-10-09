@@ -60,3 +60,7 @@ ehthumbs.db
 
 # Local Commands reference
 Commands.txt
+
+# Local junctions for direct IDE resolution
+/app
+/backend/app

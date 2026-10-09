@@ -2,11 +2,12 @@
 # Defines custom domain errors for missing jobs, unverified companies, and salary errors.
 # Ensures consistent error codes when employers or job seekers interact with job listings.
 
+from typing import Optional
 from fastapi import status
 from app.exceptions.base import AppException
 
 class JobNotFoundException(AppException):
-    def __init__(self, job_id: int = None):
+    def __init__(self, job_id: Optional[int] = None):
         detail = f"Job #{job_id} not found." if job_id else "Job not found."
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -15,7 +16,7 @@ class JobNotFoundException(AppException):
         )
 
 class CompanyNotFoundException(AppException):
-    def __init__(self, company_id: int = None):
+    def __init__(self, company_id: Optional[int] = None):
         detail = f"Company #{company_id} not found." if company_id else "Company not found."
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,

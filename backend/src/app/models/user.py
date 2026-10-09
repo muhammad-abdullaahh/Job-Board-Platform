@@ -2,26 +2,32 @@
 # Defines the database schema and table structure for application users.
 # Stores profile data, hashed passwords, administrator status, and skill associations.
 
-from datetime import datetime, timezone
+from typing import Optional, List, TYPE_CHECKING
+from datetime import datetime
 from app.database import Base
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Index, CheckConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey, Index, CheckConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.models.skill import user_skills
+
+if TYPE_CHECKING:
+    from app.models.skill import Skill
+    from app.models.application import Application
+    from app.models.refresh_token import RefreshToken
 
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False, index=True)
-    password = Column(String(255), nullable=False)
-    is_admin = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    bio = Column(Text, nullable=True)
-    years_experience = Column(Integer, default=0, nullable=False)
+    bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    years_experience: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     @property
     def years_of_experience(self) -> int:
@@ -31,8 +37,8 @@ class User(Base):
     def years_of_experience(self, val: int):
         self.years_experience = val or 0
 
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
-    deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     __table_args__ = (
         Index(
@@ -45,7 +51,6 @@ class User(Base):
     )
 
     # Relationships
-    skills = relationship("Skill", secondary=user_skills, back_populates="users")
-    applications = relationship("Application", foreign_keys="[Application.user_id]", back_populates="applicant", cascade="all, delete-orphan")
-    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
-
+    skills: Mapped[List["Skill"]] = relationship("Skill", secondary=user_skills, back_populates="users")
+    applications: Mapped[List["Application"]] = relationship("Application", foreign_keys="[Application.user_id]", back_populates="applicant", cascade="all, delete-orphan")
+    refresh_tokens: Mapped[List["RefreshToken"]] = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")

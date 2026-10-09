@@ -53,6 +53,7 @@ class CompanyResponse(PublicCompanyResponse):
     hr_contact_email: Optional[str] = None
     cro_linkedin: Optional[str] = None
     registration_number: Optional[str] = None
+    verified_by: Optional[int] = None
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
 

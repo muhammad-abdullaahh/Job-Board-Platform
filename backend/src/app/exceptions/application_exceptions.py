@@ -2,11 +2,12 @@
 # Defines custom domain errors for job application workflows.
 # Handles errors such as duplicate applications, missing records, and expired job offers.
 
+from typing import Optional
 from fastapi import status
 from app.exceptions.base import AppException
 
 class ApplicationNotFoundException(AppException):
-    def __init__(self, application_id: int = None):
+    def __init__(self, application_id: Optional[int] = None):
         detail = f"Application #{application_id} not found." if application_id else "Application not found."
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,

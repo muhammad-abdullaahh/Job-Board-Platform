@@ -62,6 +62,7 @@ def get_job_applications(
     )
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
+@router.patch("/{application_id}/status", response_model=ApplicationResponse)
 def update_application_status(
     application_id: int,
     status_in: ApplicationStatusUpdate,

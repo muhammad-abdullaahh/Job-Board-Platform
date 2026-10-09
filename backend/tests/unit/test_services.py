@@ -3,7 +3,7 @@ from app.services.job_service import JobService
 from app.services.application_service import ApplicationService
 from app.services.auth_service import AuthService
 from app.schemas.job_schema import JobCreate
-from app.schemas.auth_schema import UserRegisterRequest, LoginRequest
+from app.schemas.auth_schema import UserRegisterRequest
 from app.models.job import EmploymentType, JobStatus, Job
 from app.models.company import Company
 from app.models.user import User
@@ -14,7 +14,6 @@ from app.exceptions import (
     NotCompanyOwnerException,
     InvalidStatusTransitionException,
     DuplicateApplicationException,
-    InvalidCredentialsException,
     InvalidTokenException,
 )
 
@@ -246,8 +245,6 @@ def test_email_service_log_sanitization_in_production(monkeypatch):
     """Verify that in production mode, password reset links containing JWT tokens are not emitted to logs."""
     from app.services.email_service import email_service
     from app.config import settings
-
-    logs = []
     monkeypatch.setattr(settings, "ENVIRONMENT", "production")
 
     # In production, _log_dev_reset must not output the secret reset URL

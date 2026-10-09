@@ -3,6 +3,14 @@
 # Mounts all API routers and manages application lifespan background tasks.
 
 import os
+import sys
+from pathlib import Path
+
+# Ensure src directory is in sys.path regardless of execution entrypoint
+_SRC_DIR = str(Path(__file__).resolve().parent.parent)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
 import re
 import uuid
 import time
@@ -14,13 +22,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import Base, engine, ensure_db_migrated
+from app.database import engine, ensure_db_migrated
 from app.routes import auth, jobs, applications, companies, users, admin
 from fastapi.exceptions import RequestValidationError
 from app.scheduler import start_scheduler
 from app.core.error_handlers import http_exception_handler, generic_exception_handler, validation_exception_handler
 from app.core.logging import log_request, log_error
-import app.models  # Ensure all models are registered with Base metadata
+import app.models as _models  # noqa: F401  # Ensure all models are registered with Base metadata
 
 logger = logging.getLogger("app.main")
 
@@ -47,10 +55,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+from typing import cast, Any
+
 # Register Exception Handlers for Machine-Readable Responses
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(Exception, generic_exception_handler)
+app.add_exception_handler(HTTPException, cast(Any, http_exception_handler))
+app.add_exception_handler(RequestValidationError, cast(Any, validation_exception_handler))
+app.add_exception_handler(Exception, cast(Any, generic_exception_handler))
 
 # Configure CORS origins
 cors_origins = [
@@ -186,3 +196,8 @@ def readiness_check():
     except Exception as e:
         logger.error(f"Readiness check database connection failed: {e}")
         raise HTTPException(status_code=503, detail="Database service is temporarily unavailable. Please try again later.")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+

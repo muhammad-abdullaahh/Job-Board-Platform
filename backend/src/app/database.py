@@ -6,7 +6,7 @@ import os
 import logging
 import threading
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.pool import NullPool
 from app.config import settings
 
@@ -55,8 +55,11 @@ else:
         connect_args=connect_args,
     )
 
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 from sqlalchemy import text
 
@@ -70,7 +73,7 @@ def ensure_db_migrated():
         with _migration_lock:
             if not _db_migrated:
                 try:
-                    import app.models  # ensure all models registered with Base metadata
+                    import app.models as _models  # noqa: F401
                     Base.metadata.create_all(bind=engine)
                     if DATABASE_URL.startswith("postgresql"):
                         with engine.connect() as conn:

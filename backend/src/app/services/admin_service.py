@@ -121,7 +121,15 @@ class AdminService:
         return q.order_by(Job.created_at.desc()).offset(skip).limit(limit).all()
 
     def update_job_status(self, job_id: int, new_status: JobStatus, admin_user_id: int) -> Job:
-        job = self.db.query(Job).filter(Job.job_id == job_id, Job.deleted_at.is_(None)).first()
+        job = (
+            self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
+            .filter(Job.job_id == job_id, Job.deleted_at.is_(None))
+            .first()
+        )
         if not job:
             raise JobNotFoundException(job_id)
 
@@ -130,8 +138,15 @@ class AdminService:
         job.updated_at = datetime.now(timezone.utc)
         try:
             self.db.commit()
-            self.db.refresh(job)
-            return job
+            return (
+                self.db.query(Job)
+                .options(
+                    joinedload(Job.company),
+                    selectinload(Job.skills)
+                )
+                .filter(Job.job_id == job_id)
+                .first()
+            ) or job
         except Exception:
             self.db.rollback()
             raise

@@ -22,12 +22,14 @@ from app.core.rate_limit import (
     register_rate_limiter
 )
 
+from typing import Optional, Any
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def set_refresh_cookie(response: Response, refresh_token: str):
     max_age = settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60
     is_prod = settings.ENVIRONMENT.lower() == "production" or bool(os.getenv("VERCEL")) or settings.COOKIE_SECURE
-    samesite = "none" if is_prod else settings.COOKIE_SAMESITE
+    samesite: Any = "none" if is_prod else settings.COOKIE_SAMESITE
     secure = True if is_prod else settings.COOKIE_SECURE
     response.set_cookie(
         key="refresh_token",
@@ -68,12 +70,12 @@ def login(
 def refresh_token(
     response: Response,
     request: Request,
-    refresh_token: str = Cookie(None),
+    refresh_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
     cookie_token = refresh_token or request.cookies.get("refresh_token")
     service = AuthService(db)
-    token_res, raw_refresh = service.refresh_access_token(cookie_token)
+    token_res, raw_refresh = service.refresh_access_token(cookie_token or "")
     set_refresh_cookie(response, raw_refresh)
     return token_res
 
@@ -81,15 +83,15 @@ def refresh_token(
 def logout(
     response: Response,
     request: Request,
-    refresh_token: str = Cookie(None),
+    refresh_token: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
     cookie_token = refresh_token or request.cookies.get("refresh_token")
     service = AuthService(db)
-    service.logout(cookie_token)
+    service.logout(cookie_token or "")
 
     is_prod = settings.ENVIRONMENT.lower() == "production" or bool(os.getenv("VERCEL")) or settings.COOKIE_SECURE
-    samesite = "none" if is_prod else settings.COOKIE_SAMESITE
+    samesite: Any = "none" if is_prod else settings.COOKIE_SAMESITE
     secure = True if is_prod else settings.COOKIE_SECURE
     response.delete_cookie(key="refresh_token", path="/", samesite=samesite, secure=secure)
     return {"message": "Successfully logged out"}

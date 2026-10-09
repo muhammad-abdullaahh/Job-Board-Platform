@@ -6,7 +6,7 @@ import smtplib
 import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.config import settings
 
 logger = logging.getLogger("job_board.email_service")
@@ -142,7 +142,7 @@ class EmailService:
             "message": "If an account with that email exists, password reset instructions have been sent."
         }
 
-    def _log_dev_reset(self, email: str, reset_url: str, error_reason: str = None):
+    def _log_dev_reset(self, email: str, reset_url: str, error_reason: Optional[str] = None):
         # In production mode, never output active password reset tokens/URLs to logs
         if settings.ENVIRONMENT.lower() == "production":
             if error_reason:

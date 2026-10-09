@@ -16,3 +16,5 @@ for p in paths_to_add:
 from app.main import app
 handler = app
 
+__all__ = ["app", "handler"]
+

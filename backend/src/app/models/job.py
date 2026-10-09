@@ -3,11 +3,18 @@
 # Links jobs to their hiring company, required skills, and candidate applications.
 
 import enum
+from typing import Optional, List, TYPE_CHECKING
+from datetime import datetime
 from app.database import Base
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum, CheckConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum, CheckConstraint
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 from app.models.skill import job_skills
+
+if TYPE_CHECKING:
+    from app.models.company import Company
+    from app.models.skill import Skill
+    from app.models.application import Application
 
 class EmploymentType(str, enum.Enum):
     full_time = "full_time"
@@ -24,26 +31,26 @@ class JobStatus(str, enum.Enum):
 class Job(Base):
     __tablename__ = "jobs"
 
-    job_id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
+    job_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    company_id: Mapped[int] = mapped_column(Integer, ForeignKey("companies.company_id", ondelete="CASCADE"), nullable=False)
     
-    title = Column(String(255), nullable=False, index=True)
-    description = Column(Text, nullable=False)
-    location = Column(String(255), nullable=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    salary_min = Column(Integer, nullable=True)
-    salary_max = Column(Integer, nullable=True)
+    salary_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    salary_max: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    employment_type = Column(SQLEnum(EmploymentType), default=EmploymentType.full_time, nullable=False)
-    status = Column(SQLEnum(JobStatus), default=JobStatus.open, nullable=False, index=True)
+    employment_type: Mapped[EmploymentType] = mapped_column(SQLEnum(EmploymentType), default=EmploymentType.full_time, nullable=False)
+    status: Mapped[JobStatus] = mapped_column(SQLEnum(JobStatus), default=JobStatus.open, nullable=False, index=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
-    created_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
-    updated_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    created_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+    updated_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
 
-    deleted_at = Column(DateTime(timezone=True), nullable=True, index=True)
-    deleted_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    deleted_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     __table_args__ = (
         CheckConstraint("salary_min IS NULL OR salary_min >= 0", name="chk_job_salary_min"),
@@ -51,6 +58,6 @@ class Job(Base):
     )
 
     # Relationships
-    company = relationship("Company", back_populates="jobs")
-    skills = relationship("Skill", secondary=job_skills, back_populates="jobs")
-    applications = relationship("Application", foreign_keys="[Application.job_id]", back_populates="job", cascade="all, delete-orphan")
+    company: Mapped["Company"] = relationship("Company", back_populates="jobs")
+    skills: Mapped[List["Skill"]] = relationship("Skill", secondary=job_skills, back_populates="jobs")
+    applications: Mapped[List["Application"]] = relationship("Application", foreign_keys="[Application.job_id]", back_populates="job", cascade="all, delete-orphan")

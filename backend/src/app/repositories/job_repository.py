@@ -177,8 +177,7 @@ class JobRepository:
         try:
             self.db.add(job)
             self.db.commit()
-            self.db.refresh(job)
-            return job
+            return self.get_by_id(job.job_id) or job
         except Exception:
             self.db.rollback()
             raise
@@ -199,8 +198,7 @@ class JobRepository:
 
         try:
             self.db.commit()
-            self.db.refresh(job)
-            return job
+            return self.get_by_id(job.job_id) or job
         except Exception:
             self.db.rollback()
             raise

@@ -107,8 +107,7 @@ class ApplicationRepository:
         try:
             self.db.add(application)
             self.db.commit()
-            self.db.refresh(application)
-            return application
+            return self.get_by_id(application.application_id) or application
         except Exception:
             self.db.rollback()
             raise
@@ -133,8 +132,7 @@ class ApplicationRepository:
         if commit:
             try:
                 self.db.commit()
-                self.db.refresh(application)
-                return application
+                return self.get_by_id(application.application_id) or application
             except Exception:
                 self.db.rollback()
                 raise

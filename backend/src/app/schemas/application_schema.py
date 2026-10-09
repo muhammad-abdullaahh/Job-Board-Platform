@@ -40,3 +40,6 @@ class ApplicationResponse(BaseModel):
     job: Optional[JobResponse] = None
     applicant: Optional[UserResponse] = None
 
+
+__all__ = ["ApplicationCreate", "ApplicationStatusUpdate", "ApplicationResponse"]
+
