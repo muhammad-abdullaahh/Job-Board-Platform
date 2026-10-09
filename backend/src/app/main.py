@@ -18,7 +18,7 @@ import logging
 import traceback
 from contextlib import asynccontextmanager
 from sqlalchemy import text
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -166,6 +166,20 @@ app.include_router(companies.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1/job-seekers", tags=["Job Seekers (Alias)"])
 app.include_router(admin.router, prefix="/api/v1")
+
+# Direct /api/v1/skills alias
+from app.services.skill_service import SkillService
+from app.schemas.user_schema import SkillResponse
+from app.database import get_db
+from sqlalchemy.orm import Session
+
+skills_alias_router = APIRouter(prefix="/skills", tags=["Skills"])
+
+@skills_alias_router.get("", response_model=list[SkillResponse])
+def get_skills_direct_alias(db: Session = Depends(get_db)):
+    return SkillService(db).get_all()
+
+app.include_router(skills_alias_router, prefix="/api/v1")
 
 @app.get("/")
 def root():

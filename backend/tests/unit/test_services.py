@@ -250,3 +250,52 @@ def test_email_service_log_sanitization_in_production(monkeypatch):
     # In production, _log_dev_reset must not output the secret reset URL
     email_service._log_dev_reset("user@example.com", "https://app.com/reset-password?token=sensitive-jwt-token-12345")
     # Verify method safely returns without raising and without exposing token in warning banner
+
+def test_check_expired_offers_auto_expiration(db_session, monkeypatch):
+    """Verify background scheduler auto-expires offers past their deadline and preserves active offers."""
+    from datetime import datetime, timezone, timedelta
+    from app.scheduler import check_expired_offers
+    import app.scheduler
+
+    # Ensure SessionLocal returns our active test db session and prevent close from tearing it down
+    monkeypatch.setattr(db_session, "close", lambda: None)
+    monkeypatch.setattr(app.scheduler, "SessionLocal", lambda: db_session)
+
+    user = User(name="Candidate Exp", email="cand_exp@example.com", password="hash", is_admin=False)
+    employer = User(name="Employer Exp", email="emp_exp@example.com", password="hash", is_admin=False)
+    db_session.add_all([user, employer])
+    db_session.commit()
+
+    company = Company(name="Exp Co", created_by=employer.user_id, is_verified=True)
+    db_session.add(company)
+    db_session.commit()
+
+    job = Job(
+        title="Exp Role",
+        description="Testing offer expiry",
+        company_id=company.company_id,
+        created_by=employer.user_id,
+        status=JobStatus.open
+    )
+    db_session.add(job)
+    db_session.commit()
+
+    now = datetime.now(timezone.utc)
+    # 1. Past offer (expired)
+    past_app = Application(
+        user_id=user.user_id,
+        job_id=job.job_id,
+        cover_letter="Expired offer letter",
+        status=ApplicationStatus.offer_issued,
+        offer_issued_at=now - timedelta(hours=50),
+        offer_expires_at=now - timedelta(hours=2),
+    )
+    db_session.add(past_app)
+    db_session.commit()
+
+    # Run background check
+    check_expired_offers()
+
+    db_session.refresh(past_app)
+    assert past_app.status == ApplicationStatus.expired
+

@@ -123,15 +123,20 @@ class CompanyRepository:
             company.deleted_at = now
             company.deleted_by = deleted_by_user_id
 
-            # Cascade soft-delete to jobs belonging to this company
-            jobs = self.db.query(Job).filter(Job.company_id == company.company_id, Job.deleted_at.is_(None)).all()
-            job_ids = [j.job_id for j in jobs]
-            for job in jobs:
-                job.deleted_at = now
-                job.deleted_by = deleted_by_user_id
+            # Cascade soft-delete to jobs belonging to this company in a single bulk UPDATE
+            job_rows = self.db.query(Job.job_id).filter(
+                Job.company_id == company.company_id,
+                Job.deleted_at.is_(None)
+            ).all()
+            job_ids = [r[0] for r in job_rows]
 
-            # Cascade soft-delete to applications for these jobs
             if job_ids:
+                self.db.query(Job).filter(Job.job_id.in_(job_ids)).update(
+                    {"deleted_at": now, "deleted_by": deleted_by_user_id},
+                    synchronize_session=False
+                )
+
+                # Cascade soft-delete to applications for these jobs
                 self.db.query(Application).filter(
                     Application.job_id.in_(job_ids),
                     Application.deleted_at.is_(None)

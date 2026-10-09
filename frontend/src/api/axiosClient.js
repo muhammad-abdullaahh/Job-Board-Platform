@@ -33,6 +33,32 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let refreshPromise = null;
+
+const requestTokenRefresh = async () => {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await axiosClient.post('/auth/refresh');
+        if (res.data && res.data.access_token) {
+          const newToken = res.data.access_token;
+          setMemoryToken(newToken);
+          window.dispatchEvent(new CustomEvent('auth_token_refreshed', { detail: res.data }));
+          return newToken;
+        }
+        throw new Error('Missing access token in refresh response');
+      } catch (err) {
+        setMemoryToken(null);
+        window.dispatchEvent(new Event('auth_logout'));
+        throw err;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+};
+
 // Interceptor to automatically handle token refresh on 401 Unauthorized
 // and auto-retry idempotent GET requests once on transient network/timeout errors
 axiosClient.interceptors.response.use(
@@ -43,7 +69,7 @@ axiosClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 1. Handle 401 Unauthorized token refresh
+    // 1. Handle 401 Unauthorized token refresh with in-flight deduplication
     if (
       error.response &&
       error.response.status === 401 &&
@@ -53,17 +79,10 @@ axiosClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const res = await axiosClient.post('/auth/refresh');
-        if (res.data && res.data.access_token) {
-          const newToken = res.data.access_token;
-          setMemoryToken(newToken);
-          window.dispatchEvent(new CustomEvent('auth_token_refreshed', { detail: res.data }));
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return axiosClient(originalRequest);
-        }
+        const newToken = await requestTokenRefresh();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return axiosClient(originalRequest);
       } catch (refreshError) {
-        setMemoryToken(null);
-        window.dispatchEvent(new Event('auth_logout'));
         return Promise.reject(refreshError);
       }
     }

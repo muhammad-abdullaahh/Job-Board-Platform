@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { logoutApi, refreshTokenApi } from '../api/authApi';
 import { setMemoryToken } from '../api/axiosClient';
+import { invalidateCache } from '../api/apiCache';
 import { LoadingThrobber } from '../components/LoadingThrobber';
 
 export const AuthContext = createContext(null);
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleAuthLogout = () => {
       localStorage.removeItem('has_session');
+      invalidateCache();
       setMemoryToken(null);
       setToken(null);
       setUser(null);
@@ -94,6 +96,7 @@ export const AuthProvider = ({ children }) => {
 
   const logoutUser = async () => {
     localStorage.removeItem('has_session');
+    invalidateCache();
     try {
       await logoutApi();
     } catch (e) {

@@ -74,6 +74,28 @@ async def generic_exception_handler(request: Request, exc: Exception):
     correlation_id = getattr(request.state, "correlation_id", None)
     tb_str = traceback.format_exc()
     
+    from sqlalchemy.exc import OperationalError, DatabaseError
+    if isinstance(exc, (OperationalError, DatabaseError)):
+        log_error(
+            correlation_id=correlation_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=503,
+            error_code="SERVICE_UNAVAILABLE",
+            exception_type=exc.__class__.__name__,
+            stack_trace=tb_str,
+        )
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": 503,
+                "code": "SERVICE_UNAVAILABLE",
+                "detail": "Database service is temporarily unavailable. Please verify connection credentials or retry later.",
+                "correlation_id": correlation_id,
+            },
+            headers={"X-Correlation-ID": correlation_id} if correlation_id else {}
+        )
+
     # Structured JSON error log
     log_error(
         correlation_id=correlation_id,

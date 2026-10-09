@@ -6,7 +6,7 @@ import enum
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from app.database import Base
-from sqlalchemy import Integer, Text, DateTime, ForeignKey, UniqueConstraint, Enum as SQLEnum
+from sqlalchemy import Integer, Text, DateTime, ForeignKey, UniqueConstraint, Index, Enum as SQLEnum
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -29,10 +29,10 @@ class Application(Base):
     __tablename__ = "applications"
 
     application_id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("jobs.job_id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("jobs.job_id", ondelete="CASCADE"), nullable=False, index=True)
     cover_letter: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[ApplicationStatus] = mapped_column(SQLEnum(ApplicationStatus), default=ApplicationStatus.pending, nullable=False)
+    status: Mapped[ApplicationStatus] = mapped_column(SQLEnum(ApplicationStatus), default=ApplicationStatus.pending, nullable=False, index=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     created_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
@@ -42,10 +42,12 @@ class Application(Base):
     offer_issued_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     offer_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 
     __table_args__ = (
         UniqueConstraint("user_id", "job_id", name="uq_user_job"),
+        Index("ix_applications_active_offer", "status", "offer_expires_at"),
+        Index("ix_applications_user_active", "user_id", "deleted_at"),
     )
 
     # Relationships with explicit foreign_keys

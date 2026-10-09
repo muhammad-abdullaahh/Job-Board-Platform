@@ -27,7 +27,7 @@ class Company(Base):
     cro_linkedin: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     registration_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     verified_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)

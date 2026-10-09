@@ -21,6 +21,15 @@ export const getCache = (key) => {
 };
 
 export const setCache = (key, data, freshTtlMs = 45000, maxTtlMs = 180000) => {
+  if (memoryCache.size >= 200) {
+    // Evict oldest 50 entries
+    const iter = memoryCache.keys();
+    for (let i = 0; i < 50; i++) {
+      const next = iter.next();
+      if (next.done) break;
+      memoryCache.delete(next.value);
+    }
+  }
   memoryCache.set(key, {
     data,
     timestamp: Date.now(),

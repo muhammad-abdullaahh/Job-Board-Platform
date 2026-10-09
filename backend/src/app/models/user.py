@@ -37,7 +37,7 @@ class User(Base):
     def years_of_experience(self, val: int):
         self.years_experience = val or 0
 
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     deleted_by: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=True)
 
     __table_args__ = (

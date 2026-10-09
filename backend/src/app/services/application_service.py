@@ -155,18 +155,15 @@ class ApplicationService:
         # 4. Handle candidate offer acceptance -> Multi-write atomic transaction (Plan Spec #14)
         if new_status == ApplicationStatus.offer_accepted:
             try:
-                updated_app = self.app_repo.update_status(app, new_status, updater_user_id, commit=False)
+                self.app_repo.update_status(app, new_status, updater_user_id, commit=False)
                 job = self.job_repo.get_any_by_id(app.job_id)
                 if job:
                     job.status = JobStatus.closed
                     job.updated_at = datetime.now(timezone.utc)
                     job.updated_by = updater_user_id
                 self.db.commit()
-                self.db.refresh(app)
-                if job:
-                    self.db.refresh(job)
                 api_cache.clear_prefix("jobs:")
-                return updated_app
+                return self.app_repo.get_by_id(app.application_id) or app
             except Exception:
                 self.db.rollback()
                 raise
