@@ -1,3 +1,13 @@
+[project]
+name = "job-board-platform"
+version = "0.1.0"
+description = "Job Board Platform Monorepo"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+package = false
+
 [tool.pyright]
 include = ["backend"]
 extraPaths = ["backend/src", "backend"]

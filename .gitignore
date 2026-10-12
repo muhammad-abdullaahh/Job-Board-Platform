@@ -1,16 +1,40 @@
 # Python virtual environments & bytecode
 venv/
 .venv/
+**/venv/
+**/.venv/
 env/
 ENV/
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+**/.pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .mypy_cache/
+**/.mypy_cache/
 .ruff_cache/
+**/.ruff_cache/
+.hypothesis/
+
+# Python packaging & distribution
+*.egg-info/
+**/*.egg-info/
+.eggs/
+dist/
+build/
+develop-eggs/
+eggs/
+parts/
+bin/
+var/
+sdist/
+wheels/
+*.egg
 
 # Node.js & Frontend build outputs
 node_modules/
@@ -18,11 +42,20 @@ node_modules/
 dist/
 build/
 .vite/
+**/.vite/
+.turbo/
+**/.turbo/
 *.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.eslintcache
+
+# Vercel & Cloud deployment artifacts
+.vercel/
+**/.vercel/
+.vercel_build_output/
 
 # Database files & exports
 *.db
@@ -31,8 +64,6 @@ pnpm-debug.log*
 .pgdata/
 backend/database/database_exports/*.csv
 !backend/database/database_exports/*.example
-
-
 
 # Environment Variables & Secrets
 .env
@@ -54,9 +85,19 @@ backend/database/database_exports/*.csv
 Thumbs.db
 ehthumbs.db
 .vscode/
+**/.vscode/
 .idea/
+**/.idea/
+.cursor/
 *.swp
 *.swo
+.pyright/
+**/.pyright/
+
+# Docker & CI/CD Local Overrides
+docker-compose.override.yml
+jenkins_home/
+.jenkins/
 
 # Local Commands reference
 Commands.txt
@@ -64,3 +105,7 @@ Commands.txt
 # Local junctions for direct IDE resolution
 /app
 /backend/app
+
+# Agent Project Memory
+Antigravity.md
+
