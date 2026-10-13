@@ -109,3 +109,7 @@ Commands.txt
 # Agent Project Memory
 Antigravity.md
 
+# Postman workspace artifacts
+.postman/
+postman/
+

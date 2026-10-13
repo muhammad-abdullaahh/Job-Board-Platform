@@ -1,9 +1,10 @@
 version: "3.8"
 
 services:
+  # Isolated local PostgreSQL database container (never touches production Supabase)
   db:
     image: postgres:16-alpine
-    container_name: job_board_db
+    container_name: job_board_local_db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -18,18 +19,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # FastAPI Backend container running in local testing mode
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: job_board_backend
+    container_name: job_board_local_backend
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-job_board}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-for-local-docker-only-not-for-prod}
+      SECRET_KEY: ${SECRET_KEY:-local-docker-test-secret-key-32-chars-min-len}
       ENVIRONMENT: development
       FRONTEND_URL: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
     ports:
       - "8000:8000"
+    volumes:
+      # Live volume mounts: code changes on Windows host reflect instantly inside container
+      - ./src:/app/src
+      - ./tests:/app/tests
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +51,5 @@ services:
 
 volumes:
   postgres_data:
+    name: job_board_local_postgres_data
+

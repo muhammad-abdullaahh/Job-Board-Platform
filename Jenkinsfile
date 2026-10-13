@@ -1,3 +1,7 @@
+// Jenkins CI Pipeline for Job Board Platform
+// Purpose: Automated pre-deployment quality checks & unit/integration testing.
+// Note: Production deployment is handled automatically by Vercel (Frontend & Backend) and Supabase (Database).
+
 pipeline {
     agent any
 
