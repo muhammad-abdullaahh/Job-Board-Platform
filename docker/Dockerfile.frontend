@@ -1,0 +1,18 @@
+# ==============================================================================
+# Local testing environment for React 18 + Vite Frontend
+# ==============================================================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Cache dependencies layer
+COPY package*.json ./
+RUN npm install
+
+# Copy frontend source files
+COPY . .
+
+EXPOSE 5173
+
+# Launch Vite development server with host binding for Docker access
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

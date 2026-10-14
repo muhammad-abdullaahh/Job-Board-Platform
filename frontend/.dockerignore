@@ -1,0 +1,26 @@
+# Version control & IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Node dependencies & build artifacts
+node_modules/
+dist/
+build/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Documentation & diagrams
+docs/
+diagrams/
+
+# Environment files
+.env
+.env.*
+!*.example

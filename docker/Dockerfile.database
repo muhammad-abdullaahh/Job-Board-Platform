@@ -1,0 +1,7 @@
+# ==============================================================================
+# Local Database Image: PostgreSQL 16 (Alpine Linux)
+# ==============================================================================
+FROM postgres:16-alpine
+
+# Expose default PostgreSQL port
+EXPOSE 5432

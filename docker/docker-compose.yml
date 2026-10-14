@@ -1,0 +1,102 @@
+# ==============================================================================
+# Job Board Platform - Unified Local Docker Compose Orchestration
+# 3 Separate Custom Images | 3 Isolated Containers | 1 Shared Bridge Network
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Database Service (PostgreSQL 16)
+  # ----------------------------------------------------------------------------
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.database
+    image: job-board-db:local
+    container_name: job_board_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-job_board}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d job_board"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - job_board_network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------------------
+  # 2. Backend Service (FastAPI + Python 3.12)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/Dockerfile.backend
+    image: job-board-backend:local
+    container_name: job_board_backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-job_board}
+      SECRET_KEY: ${SECRET_KEY:-local-docker-test-secret-key-32-chars-min-len}
+      ENVIRONMENT: development
+      FRONTEND_URL: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+    ports:
+      - "8000:8000"
+    volumes:
+      # Live volume mounts for code editing
+      - ../backend/src:/app/src
+      - ../backend/tests:/app/tests
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).getcode() == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - job_board_network
+    restart: unless-stopped
+
+  # ----------------------------------------------------------------------------
+  # 3. Frontend Service (React 18 + Vite)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    image: job-board-frontend:local
+    container_name: job_board_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      # Live volume mounts for instant Vite HMR
+      - ../frontend/src:/app/src
+      - ../frontend/public:/app/public
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - job_board_network
+    restart: unless-stopped
+
+# ==============================================================================
+# Shared Resources: Bridge Network & Persistent Volumes
+# ==============================================================================
+networks:
+  job_board_network:
+    name: job_board_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: job_board_postgres_data

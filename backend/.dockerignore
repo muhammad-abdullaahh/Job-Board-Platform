@@ -1,0 +1,43 @@
+# Git & Version Control
+.git/
+.gitignore
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment Variables & Secrets
+.env
+.env.*
+!*.example
+
+# Logs & Temporary Files
+*.log
+*.tmp
+
+# Documentation & Database Exports (not needed inside container)
+docs/
+database/database_exports/*.csv
+
+# Jenkins & Postman
+jenkins/
+.postman/
+postman/

@@ -1,0 +1,48 @@
+# ==============================================================================
+# Stage 1: Build Dependencies (Builder Stage)
+# ==============================================================================
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /build
+
+# Create dedicated virtual environment for all dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy dependency definition first (Docker layer cache optimization)
+COPY requirements.txt .
+
+# Install dependencies into virtualenv without building extra unneeded artifacts
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+
+# ==============================================================================
+# Stage 2: Minimal Runtime Environment (Runner Stage)
+# ==============================================================================
+FROM python:3.12-slim AS runner
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH="/app/src" \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Copy only the pre-built virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy backend application source code
+COPY . /app
+
+EXPOSE 8000
+
+# Pure Python standard-library health check (zero OS package dependencies)
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).getcode() == 200 else 1)"
+
+# Fast Uvicorn server with hot-reloading for local testing
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
