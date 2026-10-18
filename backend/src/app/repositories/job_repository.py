@@ -5,27 +5,55 @@
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import text
+from sqlalchemy import text, func, or_, and_
 from app.models.job import Job, JobStatus, EmploymentType
 from app.models.skill import Skill
+from app.models.company import Company
+from app.models.user import User
 
 class JobRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, job_id: int) -> Optional[Job]:
+    def _apply_public_job_filter(self, query):
+        """
+        Shared visibility filter for all public job queries.
+        Excludes jobs whose company is unverified, soft-deleted,
+        or whose owner is locked or soft-deleted.
+        A company with no owner is treated as having a valid owner.
+        """
+        owner_id_col = func.coalesce(Company.created_by, Company.updated_by)
         return (
+            query
+            .join(Company, Job.company_id == Company.company_id)
+            .outerjoin(User, owner_id_col == User.user_id)
+            .filter(
+                Job.deleted_at.is_(None),
+                Company.deleted_at.is_(None),
+                Company.is_verified == True,
+                or_(
+                    owner_id_col.is_(None),
+                    and_(
+                        User.user_id.is_not(None),
+                        User.deleted_at.is_(None),
+                        User.is_active == True,
+                    ),
+                ),
+            )
+        )
+
+    def get_by_id(self, job_id: int) -> Optional[Job]:
+        query = (
             self.db.query(Job)
             .options(
                 joinedload(Job.company),
                 selectinload(Job.skills)
             )
             .filter(
-                Job.job_id == job_id,
-                Job.deleted_at.is_(None)
+                Job.job_id == job_id
             )
-            .first()
         )
+        return self._apply_public_job_filter(query).first()
 
     def get_any_by_id(self, job_id: int) -> Optional[Job]:
         return (
@@ -68,94 +96,141 @@ class JobRepository:
         order: Optional[str] = "desc"
     ) -> List[Job]:
         """
-        Multi-field job filtering executed via parameterized Raw SQL (Plan Spec #10).
-        Supports single sort parameter (e.g. ?sort=-created_at, ?sort=salary_min) as per Spec #18,
-        with backward compatibility for sort_by & order.
+        Public job search and listing, strictly enforcing the shared public visibility filter.
         """
-        # Determine sorting column and direction
-        sort_col = "created_at"
-        sort_dir = "DESC"
-
-        if sort:
-            clean_sort = sort.strip()
-            if clean_sort.startswith("-"):
-                sort_col = clean_sort[1:]
-                sort_dir = "DESC"
-            elif clean_sort.startswith("+"):
-                sort_col = clean_sort[1:]
-                sort_dir = "ASC"
-            else:
-                sort_col = clean_sort
-                sort_dir = "ASC"
-        elif sort_by:
-            sort_col = sort_by
-            sort_dir = "ASC" if order and order.lower() == "asc" else "DESC"
-
-        allowed_sort_fields = {
-            "created_at": "created_at",
-            "salary_max": "salary_max",
-            "salary_min": "salary_min",
-            "title": "title",
-            "salary": "salary_max",
-        }
-        safe_sort_col = allowed_sort_fields.get(sort_col, "created_at")
-
-        # Build parameterized Raw SQL WHERE clause
-        conditions = ["deleted_at IS NULL"]
-        params: dict = {"limit": limit, "skip": skip}
-
-        if status:
-            status_val = status.value if hasattr(status, "value") else str(status)
-            conditions.append("status = :status")
-            params["status"] = status_val
-
-        if company_id:
-            conditions.append("company_id = :company_id")
-            params["company_id"] = company_id
-
-        if employment_type:
-            emp_val = employment_type.value if hasattr(employment_type, "value") else str(employment_type)
-            conditions.append("employment_type = :employment_type")
-            params["employment_type"] = emp_val
-
-        if location:
-            conditions.append("LOWER(location) LIKE LOWER(:location)")
-            params["location"] = f"%{location}%"
-
-        if min_salary is not None:
-            conditions.append("salary_max >= :min_salary")
-            params["min_salary"] = min_salary
-
-        if query:
-            conditions.append("(LOWER(title) LIKE LOWER(:query) OR LOWER(description) LIKE LOWER(:query))")
-            params["query"] = f"%{query}%"
-
-        where_sql = " AND ".join(conditions)
-        raw_sql = f"""
-            SELECT job_id
-            FROM jobs
-            WHERE {where_sql}
-            ORDER BY {safe_sort_col} {sort_dir}
-            LIMIT :limit OFFSET :skip
-        """
-
-        result = self.db.execute(text(raw_sql), params)
-        job_ids = [row[0] for row in result.fetchall()]
-        if not job_ids:
-            return []
-
-        # Hydrate matching jobs with eager-loaded relations, preserving order
-        jobs = (
+        q = (
             self.db.query(Job)
             .options(
                 joinedload(Job.company),
                 selectinload(Job.skills)
             )
-            .filter(Job.job_id.in_(job_ids))
-            .all()
         )
-        job_map = {j.job_id: j for j in jobs}
-        return [job_map[jid] for jid in job_ids if jid in job_map]
+        q = self._apply_public_job_filter(q)
+
+        if status:
+            q = q.filter(Job.status == status)
+
+        if company_id:
+            q = q.filter(Job.company_id == company_id)
+
+        if employment_type:
+            q = q.filter(Job.employment_type == employment_type)
+
+        if location:
+            q = q.filter(func.lower(Job.location).like(f"%{location.lower()}%"))
+
+        if min_salary is not None:
+            q = q.filter(Job.salary_max >= min_salary)
+
+        if query:
+            pattern = f"%{query}%"
+            q = q.filter(
+                or_(
+                    Job.title.ilike(pattern),
+                    Job.description.ilike(pattern)
+                )
+            )
+
+        # Determine sorting column and direction
+        sort_col = "created_at"
+        desc = True
+
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                desc = True
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                desc = False
+            else:
+                sort_col = clean_sort
+                desc = False
+        elif sort_by:
+            sort_col = sort_by
+            desc = False if order and order.lower() == "asc" else True
+
+        allowed_sort_fields = {
+            "created_at": Job.created_at,
+            "salary_max": Job.salary_max,
+            "salary_min": Job.salary_min,
+            "title": Job.title,
+            "salary": Job.salary_max,
+        }
+        col_expr = allowed_sort_fields.get(sort_col, Job.created_at)
+        if desc:
+            q = q.order_by(col_expr.desc(), Job.job_id.desc())
+        else:
+            q = q.order_by(col_expr.asc(), Job.job_id.asc())
+
+        return q.offset(skip).limit(limit).all()
+
+    def list_jobs_admin(
+        self,
+        status: Optional[JobStatus] = None,
+        company_id: Optional[int] = None,
+        q: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: Optional[str] = "-created_at"
+    ) -> List[Job]:
+        """
+        Administrative job listing query: displays all jobs matching admin criteria.
+        """
+        query = (
+            self.db.query(Job)
+            .options(
+                joinedload(Job.company),
+                selectinload(Job.skills)
+            )
+            .filter(Job.deleted_at.is_(None))
+        )
+
+        if status:
+            query = query.filter(Job.status == status)
+
+        if company_id:
+            query = query.filter(Job.company_id == company_id)
+
+        if q:
+            pattern = f"%{q.strip()}%"
+            query = query.join(Job.company, isouter=True).filter(
+                or_(
+                    Job.title.ilike(pattern),
+                    Job.location.ilike(pattern),
+                    Company.name.ilike(pattern)
+                )
+            )
+
+        sort_col = "created_at"
+        desc = True
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                desc = True
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                desc = False
+            else:
+                sort_col = clean_sort
+                desc = False
+
+        allowed_cols = {
+            "created_at": Job.created_at,
+            "title": Job.title,
+            "job_id": Job.job_id,
+            "salary_min": Job.salary_min,
+            "salary_max": Job.salary_max,
+        }
+        col_expr = allowed_cols.get(sort_col, Job.created_at)
+        if desc:
+            query = query.order_by(col_expr.desc(), Job.job_id.desc())
+        else:
+            query = query.order_by(col_expr.asc(), Job.job_id.asc())
+
+        return query.offset(skip).limit(limit).all()
+
 
     def create(self, job_in, user_id: Optional[int] = None) -> Job:
         job = Job(
@@ -203,7 +278,7 @@ class JobRepository:
             self.db.rollback()
             raise
 
-    def soft_delete(self, job: Job, deleted_by_user_id: int) -> Job:
+    def soft_delete(self, job: Job, deleted_by_user_id: int, commit: bool = True) -> Job:
         now = datetime.now(timezone.utc)
         try:
             job.deleted_at = now
@@ -216,11 +291,15 @@ class JobRepository:
                 Application.deleted_at.is_(None)
             ).update({"deleted_at": now}, synchronize_session=False)
 
-            self.db.commit()
-            self.db.refresh(job)
+            if commit:
+                self.db.commit()
+                self.db.refresh(job)
+            else:
+                self.db.flush()
             return job
         except Exception:
-            self.db.rollback()
+            if commit:
+                self.db.rollback()
             raise
 
     def hard_delete(self, job: Job) -> None:

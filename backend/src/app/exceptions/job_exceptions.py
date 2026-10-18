@@ -43,7 +43,7 @@ class InvalidSalaryRangeException(AppException):
 class CompanyNotVerifiedException(AppException):
     def __init__(self, detail: str = "Your company registration is pending administrator verification. Job posting is disabled until verified."):
         super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_403_FORBIDDEN,
             error_code="COMPANY_NOT_VERIFIED",
             detail=detail
         )

@@ -8,6 +8,7 @@ from app.models.skill import Skill, user_skills, job_skills
 from app.models.job import Job, EmploymentType, JobStatus
 from app.models.application import Application, ApplicationStatus
 from app.models.refresh_token import RefreshToken
+from app.models.audit_log import AdminAuditLog
 
 __all__ = [
     "User",           # Single unified model — is_admin=True means admin
@@ -15,5 +16,7 @@ __all__ = [
     "Skill", "user_skills", "job_skills",
     "Job", "EmploymentType", "JobStatus",
     "Application", "ApplicationStatus",
-    "RefreshToken"
+    "RefreshToken",
+    "AdminAuditLog",
 ]
+

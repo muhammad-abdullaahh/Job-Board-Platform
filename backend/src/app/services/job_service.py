@@ -81,8 +81,8 @@ class JobService:
             if user:
                 is_admin = user.is_admin
 
-        # 2. Company Verification Check (Plan Spec #7)
-        if not company.is_verified and not is_admin:
+        # 2. Company Verification Check: Only verified companies can post
+        if not company.is_verified:
             raise CompanyNotVerifiedException()
 
         # 3. Company Ownership Check (Plan Spec #7)

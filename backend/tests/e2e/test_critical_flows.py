@@ -109,7 +109,7 @@ def test_flow_company_verification_and_salary_validation(client, db_session):
         "employment_type": "full_time"
     }
     block_res = client.post("/api/v1/jobs", json=job_payload, headers=emp_headers)
-    assert block_res.status_code == 400
+    assert block_res.status_code == 403
     assert block_res.json().get("code") == "COMPANY_NOT_VERIFIED"
 
     # Admin verifies the company

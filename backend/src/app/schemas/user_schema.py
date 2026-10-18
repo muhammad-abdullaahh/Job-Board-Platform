@@ -27,6 +27,9 @@ class AdminRoleUpdate(BaseModel):
 class DeleteAccountRequest(BaseModel):
     password: str
 
+class UserLockRequest(BaseModel):
+    reason: str
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -34,6 +37,9 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     is_admin: bool = False
+    is_active: bool = True
+    locked_at: Optional[datetime] = None
+    lock_reason: Optional[str] = None
     bio: Optional[str] = None
     years_of_experience: int = 0
     created_at: datetime
@@ -41,4 +47,5 @@ class UserResponse(BaseModel):
     deleted_at: Optional[datetime] = None
     deleted_by: Optional[int] = None
     skills: List[SkillResponse] = []
+
 

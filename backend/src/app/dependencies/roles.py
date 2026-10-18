@@ -17,6 +17,9 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied. Administrator privileges required."
         )
+    if not current_user.is_active or current_user.deleted_at is not None:
+        from app.exceptions.auth_exceptions import AccountLockedException
+        raise AccountLockedException("Your administrator account is locked or deactivated.")
     return current_user
 
 def require_regular_user(current_user: User = Depends(get_current_user)) -> User:

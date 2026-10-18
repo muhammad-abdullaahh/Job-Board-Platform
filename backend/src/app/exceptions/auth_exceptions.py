@@ -49,7 +49,35 @@ class AccountSuspendedException(AppException):
     def __init__(self, detail: str = "Your account has been deactivated or suspended."):
         super().__init__(
             status_code=status.HTTP_403_FORBIDDEN,
-            error_code="ACCOUNT_SUSPENDED",
+            error_code="ACCOUNT_LOCKED",
+            detail=detail
+        )
+
+class AccountLockedException(AccountSuspendedException):
+    def __init__(self, detail: str = "Your account has been locked by an administrator."):
+        super().__init__(detail=detail)
+
+class CannotModifySelfException(AppException):
+    def __init__(self, detail: str = "Administrators cannot perform lock, unlock, or deletion actions on their own accounts."):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="CANNOT_MODIFY_SELF",
+            detail=detail
+        )
+
+class CannotModifyAdminException(AppException):
+    def __init__(self, detail: str = "Administrators cannot perform lock, unlock, or deletion actions on another administrator account."):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="CANNOT_MODIFY_ADMIN",
+            detail=detail
+        )
+
+class LockReasonRequiredException(AppException):
+    def __init__(self, detail: str = "A valid reason is required to lock an account."):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="LOCK_REASON_REQUIRED",
             detail=detail
         )
 

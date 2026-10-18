@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import pytest
 from app.services.job_service import JobService
 from app.schemas.job_schema import JobCreate, JobUpdate
@@ -136,3 +137,58 @@ def test_job_service_list_jobs(db_session):
 
     jobs = service.list_jobs(company_id=company.company_id)
     assert len(jobs) == 3
+
+
+def test_job_service_public_visibility_unowned_and_owner_states(db_session):
+    service = JobService(db_session)
+    active_owner = User(name="ActiveOwner", email="act@example.com", password="hash", is_active=True)
+    locked_owner = User(name="LockedOwner", email="lock@example.com", password="hash", is_active=False)
+    deleted_owner = User(name="DeletedOwner", email="del@example.com", password="hash", is_active=True, deleted_at=datetime.now(timezone.utc))
+    db_session.add_all([active_owner, locked_owner, deleted_owner])
+    db_session.commit()
+
+    # 1. Verified company with NO owner
+    co_no_owner = Company(name="Unowned Co", created_by=None, updated_by=None, is_verified=True)
+    # 2. Verified company with locked owner
+    co_locked = Company(name="Locked Co", created_by=locked_owner.user_id, is_verified=True)
+    # 3. Verified company with soft-deleted owner
+    co_deleted = Company(name="Deleted Co", created_by=deleted_owner.user_id, is_verified=True)
+    # 4. Unverified company with active owner
+    co_unverified = Company(name="Unverified Co", created_by=active_owner.user_id, is_verified=False)
+
+    db_session.add_all([co_no_owner, co_locked, co_deleted, co_unverified])
+    db_session.commit()
+
+    j_no_owner = Job(title="Unowned Job", description="Description", company_id=co_no_owner.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_locked = Job(title="Locked Job", description="Description", company_id=co_locked.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_deleted = Job(title="Deleted Owner Job", description="Description", company_id=co_deleted.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_unverified = Job(title="Unverified Co Job", description="Description", company_id=co_unverified.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+
+    db_session.add_all([j_no_owner, j_locked, j_deleted, j_unverified])
+    db_session.commit()
+
+    # Public list & search
+    visible_jobs = service.list_jobs()
+    visible_ids = [j.job_id for j in visible_jobs]
+    assert j_no_owner.job_id in visible_ids
+    assert j_locked.job_id not in visible_ids
+    assert j_deleted.job_id not in visible_ids
+    assert j_unverified.job_id not in visible_ids
+
+    # Search by query
+    searched = service.list_jobs(query="Unowned")
+    assert any(j.job_id == j_no_owner.job_id for j in searched)
+
+    # Public detail
+    job = service.get_job(j_no_owner.job_id)
+    assert job.job_id == j_no_owner.job_id
+
+    with pytest.raises(JobNotFoundException):
+        service.get_job(j_locked.job_id)
+
+    with pytest.raises(JobNotFoundException):
+        service.get_job(j_deleted.job_id)
+
+    with pytest.raises(JobNotFoundException):
+        service.get_job(j_unverified.job_id)
+

@@ -57,7 +57,7 @@ class RefreshTokenRepository:
                 raise
         return False
 
-    def revoke_all_for_user(self, user_id: int) -> int:
+    def revoke_all_for_user(self, user_id: int, commit: bool = True) -> int:
         now = datetime.now(timezone.utc)
         try:
             count = (
@@ -68,8 +68,27 @@ class RefreshTokenRepository:
                 )
                 .update({"revoked_at": now}, synchronize_session=False)
             )
-            self.db.commit()
+            if commit:
+                self.db.commit()
             return count
         except Exception:
-            self.db.rollback()
+            if commit:
+                self.db.rollback()
             raise
+
+    def delete_all_for_user(self, user_id: int, commit: bool = True) -> int:
+        """Permanently delete all refresh tokens for a user (used during user lock and hard-delete)."""
+        try:
+            count = (
+                self.db.query(RefreshToken)
+                .filter(RefreshToken.user_id == user_id)
+                .delete(synchronize_session=False)
+            )
+            if commit:
+                self.db.commit()
+            return count
+        except Exception:
+            if commit:
+                self.db.rollback()
+            raise
+

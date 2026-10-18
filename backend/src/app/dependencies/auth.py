@@ -54,11 +54,9 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account not found.",
         )
-    if user.deleted_at is not None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Your account has been suspended by an administrator.",
-        )
+    if not user.is_active or user.deleted_at is not None:
+        from app.exceptions.auth_exceptions import AccountLockedException
+        raise AccountLockedException("Your account is locked or deactivated.")
 
     return user
 

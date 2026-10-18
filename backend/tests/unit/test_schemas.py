@@ -127,9 +127,9 @@ def test_company_schemas():
     )
     assert create.name == "TechCorp"
 
-    update = CompanyUpdate(name="TechCorp Updated", is_verified=True)
+    update = CompanyUpdate(name="TechCorp Updated")
     assert update.name == "TechCorp Updated"
-    assert update.is_verified is True
+    assert "is_verified" not in CompanyUpdate.model_fields
 
     rename = CompanyRenameRequest(name="Renamed Inc")
     assert rename.name == "Renamed Inc"

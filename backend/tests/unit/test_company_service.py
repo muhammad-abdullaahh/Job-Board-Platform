@@ -70,14 +70,16 @@ def test_company_service_update_and_verification_security(db_session):
         service.update_company(company.company_id, CompanyUpdate(description="Hacked"), updater_user_id=intruder.user_id)
     assert exc_info.value.status_code == 403
 
-    # Owner tries to self-verify -> is_verified stays False!
-    owner_update = CompanyUpdate(description="Legit description", is_verified=True)
+    # Owner updates description -> is_verified stays False!
+    owner_update = CompanyUpdate(description="Legit description")
     updated = service.update_company(company.company_id, owner_update, updater_user_id=owner.user_id)
+    assert updated.description == "Legit description"
     assert updated.is_verified is False
 
     # Admin verifies -> is_verified becomes True
-    admin_update = CompanyUpdate(is_verified=True)
-    admin_verified = service.update_company(company.company_id, admin_update, updater_user_id=admin.user_id)
+    from app.services.admin_service import AdminService
+    admin_service = AdminService(db_session)
+    admin_verified = admin_service.verify_company(company.company_id, admin_user_id=admin.user_id)
     assert admin_verified.is_verified is True
 
 def test_company_service_rename_and_delete(db_session):

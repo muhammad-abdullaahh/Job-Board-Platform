@@ -22,6 +22,7 @@ from app.schemas.auth_schema import Token
 from app.exceptions import (
     UserAlreadyExistsException,
     InvalidCredentialsException,
+    AccountLockedException,
     AccountSuspendedException,
     InvalidTokenException,
     UserNotFoundException,
@@ -77,15 +78,15 @@ class AuthService:
         return token_data, raw_refresh_token
 
     def login(self, login_in) -> Tuple[Token, str]:
-        user = self.user_repo.get_user_by_email(login_in.email, include_deleted=False)
+        user = self.user_repo.get_user_by_email(login_in.email, include_deleted=True)
         if not user:
-            deleted_user = self.user_repo.get_user_by_email(login_in.email, include_deleted=True)
-            if deleted_user and deleted_user.deleted_at is not None and verify_password(login_in.password, deleted_user.password):
-                raise AccountSuspendedException()
             raise InvalidCredentialsException()
 
         if not verify_password(login_in.password, user.password):
             raise InvalidCredentialsException()
+
+        if not user.is_active or user.deleted_at is not None:
+            raise AccountLockedException()
 
         role = "admin" if user.is_admin else "user"
         access_token_str = create_access_token(
@@ -115,8 +116,8 @@ class AuthService:
         user = self.user_repo.get_user_by_id(token_record.user_id, include_deleted=True)
         if not user:
             raise InvalidTokenException("User associated with token no longer exists.")
-        if user.deleted_at is not None:
-            raise AccountSuspendedException()
+        if not user.is_active or user.deleted_at is not None:
+            raise AccountLockedException()
 
         # Token rotation: revoke previous token record
         self.token_repo.revoke_by_hash(token_hash)

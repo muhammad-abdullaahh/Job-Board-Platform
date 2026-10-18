@@ -153,16 +153,21 @@ class UserRepository:
             self.db.rollback()
             raise
 
-    def soft_delete_user(self, user: User, deleted_by_user_id: Optional[int] = None) -> User:
+    def soft_delete_user(self, user: User, deleted_by_user_id: Optional[int] = None, commit: bool = True) -> User:
         now = datetime.now(timezone.utc)
         try:
             user.deleted_at = now
+            user.is_active = False
             valid_deleted_by = None
             if deleted_by_user_id:
                 deleter_exists = self.db.query(User.user_id).filter(User.user_id == deleted_by_user_id).first()
                 if deleter_exists:
                     valid_deleted_by = deleted_by_user_id
             user.deleted_by = valid_deleted_by
+
+            # Delete / revoke refresh tokens
+            from app.models.refresh_token import RefreshToken
+            self.db.query(RefreshToken).filter(RefreshToken.user_id == user.user_id).delete(synchronize_session=False)
 
             # Cascade soft-delete respectively to associated entities:
             # 1. Applications submitted by this user
@@ -207,12 +212,172 @@ class UserRepository:
                     Application.deleted_at.is_(None)
                 ).update({"deleted_at": now}, synchronize_session=False)
 
-            self.db.commit()
-            self.db.refresh(user)
+            if commit:
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                self.db.flush()
             return user
         except Exception:
-            self.db.rollback()
+            if commit:
+                self.db.rollback()
             raise
+
+    def lock_user(self, user: User, reason: str, commit: bool = True) -> User:
+        now = datetime.now(timezone.utc)
+        user.is_active = False
+        user.locked_at = now
+        user.lock_reason = reason
+        try:
+            if commit:
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                self.db.flush()
+            return user
+        except Exception:
+            if commit:
+                self.db.rollback()
+            raise
+
+    def unlock_user(self, user: User, commit: bool = True) -> User:
+        user.is_active = True
+        user.locked_at = None
+        user.lock_reason = None
+        try:
+            if commit:
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                self.db.flush()
+            return user
+        except Exception:
+            if commit:
+                self.db.rollback()
+            raise
+
+    def hard_delete_user(self, user: User, commit: bool = True) -> None:
+        """Permanently delete user and cascade clean all related resources."""
+        uid = user.user_id
+        from app.models.refresh_token import RefreshToken
+        from sqlalchemy import text
+        try:
+            # 1. Delete refresh tokens
+            self.db.query(RefreshToken).filter(RefreshToken.user_id == uid).delete(synchronize_session=False)
+
+            # 2. Delete applications submitted by this user
+            self.db.query(Application).filter(Application.user_id == uid).delete(synchronize_session=False)
+
+            # 3. Companies owned by this user
+            owned_companies = self.db.query(Company).filter(
+                or_(
+                    Company.created_by == uid,
+                    and_(Company.created_by.is_(None), Company.updated_by == uid)
+                )
+            ).all()
+            company_ids = [c.company_id for c in owned_companies]
+
+            # 4. Jobs owned by user or under user's companies
+            job_filters = [Job.created_by == uid]
+            if company_ids:
+                job_filters.append(Job.company_id.in_(company_ids))
+            owned_jobs = self.db.query(Job).filter(or_(*job_filters)).all()
+            job_ids = [j.job_id for j in owned_jobs]
+
+            # 5. Delete applications for those jobs
+            if job_ids:
+                self.db.query(Application).filter(Application.job_id.in_(job_ids)).delete(synchronize_session=False)
+
+            # 6. Delete job_skills association for those jobs
+            if job_ids:
+                self.db.execute(
+                    text("DELETE FROM job_skills WHERE job_id IN :jids"),
+                    {"jids": tuple(job_ids) if len(job_ids) > 1 else (job_ids[0],)}
+                )
+
+            # 7. Delete the jobs
+            if job_ids:
+                self.db.query(Job).filter(Job.job_id.in_(job_ids)).delete(synchronize_session=False)
+
+            # 8. Delete user_skills association
+            self.db.execute(text("DELETE FROM user_skills WHERE user_id = :uid"), {"uid": uid})
+
+            # 9. Nullify foreign key references to this user from other entities
+            self.db.query(Company).filter(Company.updated_by == uid).update({"updated_by": None}, synchronize_session=False)
+            self.db.query(Company).filter(Company.verified_by == uid).update({"verified_by": None}, synchronize_session=False)
+            self.db.query(Company).filter(Company.deleted_by == uid).update({"deleted_by": None}, synchronize_session=False)
+            self.db.query(Job).filter(Job.updated_by == uid).update({"updated_by": None}, synchronize_session=False)
+            self.db.query(Job).filter(Job.deleted_by == uid).update({"deleted_by": None}, synchronize_session=False)
+            self.db.query(Application).filter(Application.created_by == uid).update({"created_by": None}, synchronize_session=False)
+            self.db.query(Application).filter(Application.updated_by == uid).update({"updated_by": None}, synchronize_session=False)
+            self.db.query(User).filter(User.deleted_by == uid).update({"deleted_by": None}, synchronize_session=False)
+
+            # 10. Delete owned companies
+            if company_ids:
+                self.db.query(Company).filter(Company.company_id.in_(company_ids)).delete(synchronize_session=False)
+
+            # 11. Delete the user
+            self.db.delete(user)
+
+            if commit:
+                self.db.commit()
+            else:
+                self.db.flush()
+        except Exception:
+            if commit:
+                self.db.rollback()
+            raise
+
+    def list_users_admin(
+        self,
+        is_active: Optional[bool] = None,
+        is_admin: Optional[bool] = None,
+        q: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: Optional[str] = "-created_at"
+    ) -> List[User]:
+        from sqlalchemy.orm import selectinload
+        query = self.db.query(User).options(selectinload(User.skills))
+
+        if is_active is not None:
+            query = query.filter(User.is_active == is_active)
+        if is_admin is not None:
+            query = query.filter(User.is_admin == is_admin)
+        if q:
+            pattern = f"%{q.strip()}%"
+            query = query.filter(or_(User.name.ilike(pattern), User.email.ilike(pattern)))
+
+        # Sorting
+        sort_col = "created_at"
+        desc = True
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                desc = True
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                desc = False
+            else:
+                sort_col = clean_sort
+                desc = False
+
+        allowed_cols = {
+            "created_at": User.created_at,
+            "name": User.name,
+            "email": User.email,
+            "user_id": User.user_id,
+            "years_experience": User.years_experience,
+        }
+        col_expr = allowed_cols.get(sort_col, User.created_at)
+        if desc:
+            query = query.order_by(col_expr.desc(), User.user_id.desc())
+        else:
+            query = query.order_by(col_expr.asc(), User.user_id.asc())
+
+        return query.offset(skip).limit(limit).all()
+
 
     def restore_user(self, user: User) -> User:
         try:

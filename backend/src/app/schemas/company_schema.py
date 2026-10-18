@@ -27,7 +27,6 @@ class CompanyUpdate(BaseModel):
     hr_contact_email: Optional[str] = None
     cro_linkedin: Optional[str] = None
     registration_number: Optional[str] = None
-    is_verified: Optional[bool] = None
 
 
 class CompanyRenameRequest(BaseModel):

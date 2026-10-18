@@ -18,6 +18,8 @@ from app.exceptions import (
     JobNotOpenException,
     InvalidStatusTransitionException,
     ForbiddenException,
+    CompanyNotVerifiedException,
+    AccountLockedException,
 )
 from app.utils.cache import api_cache
 
@@ -55,9 +57,20 @@ class ApplicationService:
         self.user_repo = UserRepository(db)
 
     def apply_to_job(self, user_id: int, app_in) -> Application:
-        job = self.job_repo.get_by_id(app_in.job_id)
-        if not job:
+        job = self.job_repo.get_any_by_id(app_in.job_id)
+        if not job or job.deleted_at is not None:
             raise JobNotFoundException(app_in.job_id)
+
+        # Company must be verified and active
+        if not job.company or not job.company.is_verified or job.company.deleted_at is not None:
+            raise CompanyNotVerifiedException("Cannot apply to a job from an unverified or inactive company.")
+
+        # Employer/owner must be active and not locked or deleted (unowned companies are allowed)
+        owner_id = job.company.created_by if job.company.created_by is not None else job.company.updated_by
+        if owner_id:
+            owner = self.user_repo.get_user_by_id(owner_id, include_deleted=True)
+            if not owner or not owner.is_active or owner.deleted_at is not None:
+                raise AccountLockedException("Cannot apply to a job from a locked employer account.")
 
         if job.status != JobStatus.open:
             raise JobNotOpenException()

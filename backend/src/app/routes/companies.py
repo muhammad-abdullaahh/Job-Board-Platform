@@ -99,9 +99,12 @@ def verify_company(
     admin_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    service = CompanyService(db)
-    comp_update = CompanyUpdate(is_verified=is_verified)
-    verified = service.update_company(company_id, comp_update, updater_user_id=admin_user.user_id)
+    from app.services.admin_service import AdminService
+    admin_service = AdminService(db)
+    if is_verified:
+        verified = admin_service.verify_company(company_id=company_id, admin_user_id=admin_user.user_id)
+    else:
+        verified = admin_service.unverify_company(company_id=company_id, admin_user_id=admin_user.user_id)
     api_cache.clear_prefix("companies:")
     api_cache.clear_prefix("jobs:")
     return verified

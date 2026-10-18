@@ -139,3 +139,58 @@ class ApplicationRepository:
         else:
             self.db.flush()
             return application
+
+    def list_applications_admin(
+        self,
+        status: Optional[ApplicationStatus] = None,
+        job_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        company_id: Optional[int] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: Optional[str] = "-created_at"
+    ) -> List[Application]:
+        q = self.db.query(Application).options(*self._eager_options())
+
+        if status:
+            q = q.filter(Application.status == status)
+        if job_id:
+            q = q.filter(Application.job_id == job_id)
+        if user_id:
+            q = q.filter(Application.user_id == user_id)
+        if company_id:
+            q = q.join(Job, Application.job_id == Job.job_id).filter(Job.company_id == company_id)
+        if from_date:
+            q = q.filter(Application.created_at >= from_date)
+        if to_date:
+            q = q.filter(Application.created_at <= to_date)
+
+        sort_col = "created_at"
+        desc = True
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                desc = True
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                desc = False
+            else:
+                sort_col = clean_sort
+                desc = False
+
+        allowed_cols = {
+            "created_at": Application.created_at,
+            "application_id": Application.application_id,
+            "status": Application.status,
+        }
+        col_expr = allowed_cols.get(sort_col, Application.created_at)
+        if desc:
+            q = q.order_by(col_expr.desc(), Application.application_id.desc())
+        else:
+            q = q.order_by(col_expr.asc(), Application.application_id.asc())
+
+        return q.offset(skip).limit(limit).all()
+

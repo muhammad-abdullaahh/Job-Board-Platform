@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import pytest
 from app.services.application_service import ApplicationService
 from app.schemas.application_schema import ApplicationCreate
@@ -12,6 +13,8 @@ from app.exceptions import (
     JobNotOpenException,
     InvalidStatusTransitionException,
     ForbiddenException,
+    AccountLockedException,
+    CompanyNotVerifiedException,
 )
 
 def test_application_service_apply_validations(db_session):
@@ -154,3 +157,51 @@ def test_application_service_status_transition_workflow(db_session):
     # Job is now automatically closed
     db_session.refresh(job)
     assert job.status == JobStatus.closed
+
+
+def test_application_service_owner_status_and_unowned_company(db_session):
+    service = ApplicationService(db_session)
+    candidate = User(name="Candidate", email="cand_unit@example.com", password="hash")
+    active_owner = User(name="ActiveOwner", email="act_unit@example.com", password="hash", is_active=True)
+    locked_owner = User(name="LockedOwner", email="lock_unit@example.com", password="hash", is_active=False)
+    deleted_owner = User(name="DeletedOwner", email="del_unit@example.com", password="hash", is_active=True, deleted_at=datetime.now(timezone.utc))
+    db_session.add_all([candidate, active_owner, locked_owner, deleted_owner])
+    db_session.commit()
+
+    # 1. Verified company with NO owner
+    co_no_owner = Company(name="Unowned Co", created_by=None, updated_by=None, is_verified=True)
+    # 2. Verified company with locked owner
+    co_locked = Company(name="Locked Co", created_by=locked_owner.user_id, is_verified=True)
+    # 3. Verified company with soft-deleted owner
+    co_deleted = Company(name="Deleted Co", created_by=deleted_owner.user_id, is_verified=True)
+    # 4. Unverified company with active owner
+    co_unverified = Company(name="Unverified Co", created_by=active_owner.user_id, is_verified=False)
+
+    db_session.add_all([co_no_owner, co_locked, co_deleted, co_unverified])
+    db_session.commit()
+
+    j_no_owner = Job(title="Unowned Job", description="Desc", company_id=co_no_owner.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_locked = Job(title="Locked Job", description="Desc", company_id=co_locked.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_deleted = Job(title="Deleted Owner Job", description="Desc", company_id=co_deleted.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+    j_unverified = Job(title="Unverified Co Job", description="Desc", company_id=co_unverified.company_id, employment_type=EmploymentType.full_time, status=JobStatus.open)
+
+    db_session.add_all([j_no_owner, j_locked, j_deleted, j_unverified])
+    db_session.commit()
+
+    # a. Can apply to job from verified company with no owner
+    app_record = service.apply_to_job(candidate.user_id, ApplicationCreate(job_id=j_no_owner.job_id, cover_letter="Letter"))
+    assert app_record.application_id is not None
+    assert app_record.status == ApplicationStatus.pending
+
+    # b. Cannot apply to job from company with locked owner
+    with pytest.raises(AccountLockedException):
+        service.apply_to_job(candidate.user_id, ApplicationCreate(job_id=j_locked.job_id, cover_letter="Letter"))
+
+    # c. Cannot apply to job from company with soft-deleted owner
+    with pytest.raises(AccountLockedException):
+        service.apply_to_job(candidate.user_id, ApplicationCreate(job_id=j_deleted.job_id, cover_letter="Letter"))
+
+    # d. Cannot apply to job from unverified company
+    with pytest.raises(CompanyNotVerifiedException):
+        service.apply_to_job(candidate.user_id, ApplicationCreate(job_id=j_unverified.job_id, cover_letter="Letter"))
+

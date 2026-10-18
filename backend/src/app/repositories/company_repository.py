@@ -75,7 +75,8 @@ class CompanyRepository:
 
     def update(self, company: Company, company_in, updater_user_id: Optional[int] = None) -> Company:
         update_data = company_in.model_dump(exclude_unset=True)
-        is_verified = update_data.pop('is_verified', None)
+        # Normal updates must NEVER alter verification status
+        update_data.pop('is_verified', None)
 
         # Backfill created_by if missing
         if company.created_by is None and company.updated_by:
@@ -85,14 +86,10 @@ class CompanyRepository:
         for field, value in update_data.items():
             setattr(company, field, value)
 
-        if is_verified is not None:
-            company.is_verified = is_verified
-            if is_verified and updater_user_id:
-                company.verified_by = updater_user_id
-
         # Update audit trail
         if updater_user_id:
             company.updated_by = updater_user_id
+        company.updated_at = datetime.now(timezone.utc)
 
         try:
             self.db.commit()
@@ -100,6 +97,24 @@ class CompanyRepository:
             return company
         except Exception:
             self.db.rollback()
+            raise
+
+    def verify_company(self, company: Company, is_verified: bool, admin_user_id: int, commit: bool = True) -> Company:
+        now = datetime.now(timezone.utc)
+        company.is_verified = is_verified
+        company.verified_by = admin_user_id if is_verified else None
+        company.updated_by = admin_user_id
+        company.updated_at = now
+        try:
+            if commit:
+                self.db.commit()
+                self.db.refresh(company)
+            else:
+                self.db.flush()
+            return company
+        except Exception:
+            if commit:
+                self.db.rollback()
             raise
 
     def rename(self, company: Company, new_name: str, updated_by_user_id: int) -> Company:
@@ -109,6 +124,7 @@ class CompanyRepository:
 
         company.name = new_name
         company.updated_by = updated_by_user_id
+        company.updated_at = datetime.now(timezone.utc)
         try:
             self.db.commit()
             self.db.refresh(company)
@@ -117,7 +133,7 @@ class CompanyRepository:
             self.db.rollback()
             raise
 
-    def soft_delete(self, company: Company, deleted_by_user_id: int) -> Company:
+    def soft_delete(self, company: Company, deleted_by_user_id: int, commit: bool = True) -> Company:
         now = datetime.now(timezone.utc)
         try:
             company.deleted_at = now
@@ -142,9 +158,59 @@ class CompanyRepository:
                     Application.deleted_at.is_(None)
                 ).update({"deleted_at": now}, synchronize_session=False)
 
-            self.db.commit()
-            self.db.refresh(company)
+            if commit:
+                self.db.commit()
+                self.db.refresh(company)
+            else:
+                self.db.flush()
             return company
         except Exception:
-            self.db.rollback()
+            if commit:
+                self.db.rollback()
             raise
+
+    def list_companies_admin(
+        self,
+        is_verified: Optional[bool] = None,
+        q: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 20,
+        sort: Optional[str] = "-created_at"
+    ) -> List[Company]:
+        query = self.db.query(Company).filter(Company.deleted_at.is_(None))
+
+        if is_verified is not None:
+            query = query.filter(Company.is_verified == is_verified)
+        if q:
+            pattern = f"%{q.strip()}%"
+            query = query.filter(Company.name.ilike(pattern))
+
+        # Sorting
+        sort_col = "created_at"
+        desc = True
+        if sort:
+            clean_sort = sort.strip()
+            if clean_sort.startswith("-"):
+                sort_col = clean_sort[1:]
+                desc = True
+            elif clean_sort.startswith("+"):
+                sort_col = clean_sort[1:]
+                desc = False
+            else:
+                sort_col = clean_sort
+                desc = False
+
+        allowed_cols = {
+            "created_at": Company.created_at,
+            "name": Company.name,
+            "company_id": Company.company_id,
+            "location": Company.location,
+        }
+        col_expr = allowed_cols.get(sort_col, Company.created_at)
+        if desc:
+            query = query.order_by(col_expr.desc(), Company.company_id.desc())
+        else:
+            query = query.order_by(col_expr.asc(), Company.company_id.asc())
+
+        return query.offset(skip).limit(limit).all()
+
