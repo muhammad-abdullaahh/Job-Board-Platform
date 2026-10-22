@@ -41,7 +41,18 @@ export function getEnv(): EnvConfig {
     return validatedEnv
   }
 
-  const result = envSchema.safeParse(process.env)
+  const rawEnv = {
+    ...process.env,
+    CMS_PUBLIC_URL:
+      process.env.CMS_PUBLIC_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : undefined),
+  }
+
+  const result = envSchema.safeParse(rawEnv)
 
   if (!result.success) {
     const errorDetails = result.error.issues
