@@ -10,7 +10,6 @@ dist/
 *.tsbuildinfo
 
 # Payload generated files
-src/app/(payload)/admin/importMap.js
 src/payload-types.ts
 
 # Environment variables & secrets (exclude all .env files except .env.example)
