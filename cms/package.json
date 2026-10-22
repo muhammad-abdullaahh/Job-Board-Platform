@@ -1,0 +1,45 @@
+{
+  "name": "job-board-cms",
+  "version": "1.0.0",
+  "description": "Internal Admin CMS for Job Board Platform powered by Payload CMS 3 and Next.js App Router",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "gen:api": "tsx scripts/gen-api.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "create-staff": "tsx scripts/create-staff.ts",
+    "generate:importmap": "payload generate:importmap",
+    "generate:types": "payload generate:types",
+    "payload": "payload"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "^3.91.0",
+    "@payloadcms/next": "^3.91.0",
+    "@payloadcms/richtext-lexical": "^3.91.0",
+    "@payloadcms/ui": "^3.91.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.7",
+    "graphql": "^16.8.1",
+    "next": "16.4.2",
+    "payload": "^3.91.0",
+    "pg": "^8.13.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/pg": "^8.11.10",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "openapi-typescript": "^7.13.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
