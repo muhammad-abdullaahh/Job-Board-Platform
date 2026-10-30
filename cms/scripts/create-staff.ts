@@ -11,8 +11,8 @@ async function createStaffUser(): Promise<void> {
     process.exit(1)
   }
 
-  if (!password || password.length < 14) {
-    console.error('❌ Error: STAFF_PASSWORD must be provided and must be at least 14 characters long.')
+  if (!password || password.length < 8) {
+    console.error('❌ Error: STAFF_PASSWORD must be provided and must be at least 8 characters long.')
     // Never print the password
     process.exit(1)
   }
